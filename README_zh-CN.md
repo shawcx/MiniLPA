@@ -1,6 +1,6 @@
 <div align="center">
     <br />
-    <img alt="MiniLPA" src="https://github.com/EsimMoe/MiniLPA/raw/main/assets/logo.svg">
+    <img alt="MiniLPA" src="assets/logo.svg">
 </div>
 
 <h3 align="center">精美的现代化 LPA UI</h4>
@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+    <a href="#关于此复刻">关于此复刻</a> •
     <a href="#特性">特性</a> •
     <a href="#安装">安装</a> •
     <a href="#技巧">技巧</a> •
@@ -23,14 +24,18 @@
 </p>
 
 <div align="center">
-    <img alt="主题展示" src="https://github.com/EsimMoe/MiniLPA/raw/main/assets/主题展示.apng">
+    <img alt="主题展示" src="assets/主题展示.apng">
 </div>
 
-## 推广
-MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更不易因外力损坏  
-无法使用常规 LPA 管理卡片时也可使用 STK 菜单进行卡片管理, 方便好用  
-现在使用 `MiniLPA` 作为优惠码可享九折优惠哦, 欢迎下单购买~  
-点此进入商品页 -> [ESTKme-ECO](https://www.estk.me/product/estkme-eco/?aid=MiniLPA)
+## 关于此复刻
+本仓库是 [EsimMoe/MiniLPA](https://github.com/EsimMoe/MiniLPA) 的复刻, 与上游相比:
+- **修复**: 禁用与删除通知遵循各自的设置, 原生 Wayland 选项可以正常生效  
+  制造商信息改用 osmocom 当前的 [EUM 列表](https://euicc-manual.osmocom.org/docs/pki/eum/), 由于相关数据已不再发布, 不再显示设备型号
+- **隐私**: 日志会遮盖 EID 与 ICCID, 并隐藏激活码、确认码与 IMEI, 可以放心附在议题中
+- **安全**: lpac 固定为指定版本并校验 SHA-256, Gradle 会校验所有依赖  
+  设置与内置的 lpac 始终位于 `~/.minilpa`, 不会从启动 MiniLPA 时所在的文件夹读取
+- **构建**: 仅需 Gradle 无需 PowerShell, 已更新 Gradle、Kotlin 与各依赖库, 独立 jar 内置 Linux arm64 版 lpac, macOS app-image 压缩包保留代码签名
+- **移除**: 未完成的远程 LPA 后端, 以及 Telegram 发布推送
 
 
 ## 特性
@@ -52,14 +57,8 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 本项目使用 `Kotlin` 编写 因此需要安装 `Java` 运行时才可以使用  
 但为了方便使用构建将会提供已经打包 jvm 的一键安装版本 安装后开箱即用  
-请根据您的系统与架构自行下载即可 [MiniLPA Releases](https://github.com/EsimMoe/MiniLPA/releases/latest)
-
-#### 使用包管理器
-> ##### macOS Homebrew
-> ```
-> brew install EsimMoe/homebrew-cask/minilpa
-> ```
-欢迎贡献更多的包管理器支持选项
+请根据您的系统与架构从 [Releases](https://github.com/shawcx/MiniLPA/releases) 下载即可  
+每次推送到 `main` 也会构建全部安装包, 可在对应的 [Actions](https://github.com/shawcx/MiniLPA/actions) 运行中下载 (需登录 GitHub)
 
 #### 自行安装 Java
 > [!IMPORTANT]  
@@ -78,19 +77,19 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 > 请不要向 MiniLPA 反馈由此导致的相关问题
 
 ## 技巧
-> ![拖拽-激活码二维码-配置区域](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码二维码-配置区域.apng)
+> ![拖拽-激活码二维码-配置区域](assets/拖拽-激活码二维码-配置区域.apng)
 > 通过拖拽激活码二维码图片至配置区域以快速解析信息
 
-> ![拖拽-激活码二维码-下载窗口](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码二维码-下载窗口.apng)
+> ![拖拽-激活码二维码-下载窗口](assets/拖拽-激活码二维码-下载窗口.apng)
 > 拖拽到下载窗口也是可行的, 同理其他拖拽也可以如此操作
 
-> ![拖拽-激活码-配置区域](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码-配置区域.apng)
+> ![拖拽-激活码-配置区域](assets/拖拽-激活码-配置区域.apng)
 > 也可拖拽激活码文本信息
 
-> ![粘贴-激活码二维码-配置区域](https://github.com/EsimMoe/MiniLPA/raw/main/assets/粘贴-激活码二维码-配置区域.apng)
+> ![粘贴-激活码二维码-配置区域](assets/粘贴-激活码二维码-配置区域.apng)
 > 通过按下 `Ctrl + V`(macOS 为 `Command + V`) 或 `Shift + Insert` 粘贴快捷键以解析剪贴板内的激活码二维码图片
  
-> ![通知-选择器使用](https://github.com/EsimMoe/MiniLPA/raw/main/assets/通知-选择器使用.apng)
+> ![通知-选择器使用](assets/通知-选择器使用.apng)
 > 点击通知页内通知条目右侧的复选框 可以进入选择模式  
 > 在选择模式下 点击其他条目可以选择或者取消选择 也可使用右上方快捷选择器进行全选 批量选择 退出选择模式等  
 > 通过在按下 Shift 时点击 可以区选上次点击和本次点击之间的条目  
@@ -98,9 +97,16 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 ## 构建
 > [!NOTE]  
-> 构建需要 JDK 21, Windows 下请使用 `gradlew.bat` 代替 `./gradlew`
+> 构建需要 JDK 21, Windows 下请使用 `gradlew.bat` 代替 `./gradlew`  
+> 首次构建会下载 lpac (固定版本并校验 SHA-256) 以及 osmocom 的 eUICC 数据, 因此需要联网
 
 ```shell
+# 从源码运行 (设置与日志保存在项目文件夹内)
+./gradlew run
+
+# 测试
+./gradlew test
+
 # Jar (build/libs/MiniLPA-all.jar)
 # -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86, linux_aarch64] 指定打包 lpac 的平台 (默认为当前平台)
 ./gradlew shadowJar
@@ -119,13 +125,13 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 ## 反馈
 我们欢迎任何反馈 如果有任何问题或建议  
-欢迎前往 [议题](https://github.com/EsimMoe/MiniLPA/issues) 开启新的工单以获取支持  
+欢迎前往 [议题](https://github.com/shawcx/MiniLPA/issues) 开启新的工单以获取支持  
 不过请注意 本项目为公益项目  
 您的反馈可能会被关闭或不被处理
 
 > [!IMPORTANT]  
 > #### 反馈前需要确认的事
-> - 查找是否有类似的 [议题](https://github.com/EsimMoe/MiniLPA/issues)
+> - 查找是否有类似的 [议题](https://github.com/shawcx/MiniLPA/issues)
 > - 使用本项目御用推荐的 `Java` 发行版运行时
 > - 使用 CI 内最新构建
 > - **完整并详细** 的描述你的问题
@@ -147,6 +153,11 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 > 而 `启用` 与 `禁用` 通知在大部分情况下即使不发送也不会产生显著影响  
 > 为了提高切卡速度 及保护隐私 遂默认不进行发送与移除  
 > 如用户希望遵守 GSMA 规范请前往 `设置` - `行为` 将关于通知发送与移除相关选项全部勾选即可
+
+> #### 设置与日志保存在哪里?
+> 所有构建均保存在用户主目录下的 `.minilpa` 文件夹 (`~/.minilpa`, Windows 下为 `%USERPROFILE%\.minilpa`)  
+> 旧版的独立 jar 与 app-image 会将其保存在启动 MiniLPA 时所在的文件夹, 如需保留设置 请将其中的 `setting.yaml` 复制到 `.minilpa`  
+> 使用 `./gradlew run` 从源码运行时 则保存在项目文件夹内
 
 > #### 为什么 Linux 下使用 HiDPI 屏幕时 软件窗口看起来很小?
 > Linux 下显示方案较多 `Java` 主线并未细化兼容各种方案下的 HiDPI 缩放  

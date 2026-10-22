@@ -1,6 +1,6 @@
 <div align="center">
     <br />
-    <img alt="MiniLPA" src="https://github.com/EsimMoe/MiniLPA/raw/main/assets/logo.svg">
+    <img alt="MiniLPA" src="assets/logo.svg">
 </div>
 
 <h3 align="center">Elegant Modern LPA UI</h4>
@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+    <a href="#about-this-fork">About This Fork</a> •
     <a href="#features">Features</a> •
     <a href="#installation">Installation</a> •
     <a href="#tips">Tips</a> •
@@ -22,14 +23,18 @@
 </p>
 
 <div align="center">
-    <img alt="Theme Display" src="https://github.com/EsimMoe/MiniLPA/raw/main/assets/主题展示.apng">
+    <img alt="Theme Display" src="assets/主题展示.apng">
 </div>
 
-## Promotion
-The MiniLPA development team recommends Estkme eUICC cards here, with SiP advanced packaging technology that is less susceptible to damage from external forces.
-When unable to use conventional LPA management cards, you can also use the STK menu for card management, which is convenient and user-friendly.  
-Use `MiniLPA` as a coupon code to get 10% off on your order.
-Click here to enter the product page -> [ESTKme-ECO](https://www.estk.me/product/estkme-eco/?aid=MiniLPA)
+## About This Fork
+This is a fork of [EsimMoe/MiniLPA](https://github.com/EsimMoe/MiniLPA). Compared with upstream:
+- **Fixes**: disable and delete notifications follow their own settings, and the native Wayland option takes effect.
+  Manufacturer info comes from osmocom's current [EUM list](https://euicc-manual.osmocom.org/docs/pki/eum/); device product names are no longer shown, as that data is no longer published.
+- **Privacy**: logs mask EIDs and ICCIDs and hide activation codes, confirmation codes and IMEIs, so they are safe to attach to issues.
+- **Security**: lpac is pinned to a release and checked against its SHA-256, and Gradle verifies every dependency.
+  Settings and the bundled lpac always live in `~/.minilpa`, never in the folder MiniLPA was started from.
+- **Builds**: plain Gradle with no PowerShell, current Gradle, Kotlin and libraries, Linux arm64 lpac in the standalone jar, and macOS app-image zips that keep their code signature.
+- **Removed**: the unfinished remote LPA backend and the Telegram release pushes.
 
 
 ## Features
@@ -51,14 +56,8 @@ Click here to enter the product page -> [ESTKme-ECO](https://www.estk.me/product
 #### Simple Installation
 This project is written in `Kotlin`, so you need to install `Java` runtime to use it.  
 But for convenience, pre-packaged JVM versions will be provided for easy installation and use out of the box.  
-Simply download according to your system and architecture. [MiniLPA Releases](https://github.com/EsimMoe/MiniLPA/releases/latest)
-
-#### Using Package Managers
-> ##### macOS Homebrew
-> ```
-> brew install EsimMoe/homebrew-cask/minilpa
-> ```
-Feel free to contribute more package manager support options!
+Simply download according to your system and architecture from [Releases](https://github.com/shawcx/MiniLPA/releases).  
+Every push to `main` also builds all packages; download them from the matching [Actions](https://github.com/shawcx/MiniLPA/actions) run (requires a GitHub sign-in).
 
 #### Manual Java Installation
 > [!IMPORTANT]  
@@ -77,19 +76,19 @@ Other distributions are also viable, but there's no guarantee that they will wor
 > Please do not report problems with this to MiniLPA.
 
 ## Tips
-> ![Drag & Drop - Activation Code QR Code - Configuration Area](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码二维码-配置区域.apng)
+> ![Drag & Drop - Activation Code QR Code - Configuration Area](assets/拖拽-激活码二维码-配置区域.apng)
 > Quickly parse information by dragging and dropping the activation code QR code image into the configuration area.
 
-> ![Drag & Drop - Activation Code QR Code - Download Window](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码二维码-下载窗口.apng)
+> ![Drag & Drop - Activation Code QR Code - Download Window](assets/拖拽-激活码二维码-下载窗口.apng)
 > Dropping into the download window is also feasible, and the same applies to other drag and drop actions.
 
-> ![Drag & Drop - Activation Code - Configuration Area](https://github.com/EsimMoe/MiniLPA/raw/main/assets/拖拽-激活码-配置区域.apng)
+> ![Drag & Drop - Activation Code - Configuration Area](assets/拖拽-激活码-配置区域.apng)
 > You can also drag and drop the activation code text.
 
-> ![Paste - Activation Code QR Code - Configuration Area](https://github.com/EsimMoe/MiniLPA/raw/main/assets/粘贴-激活码二维码-配置区域.apng)
+> ![Paste - Activation Code QR Code - Configuration Area](assets/粘贴-激活码二维码-配置区域.apng)
 > Use the `Ctrl + V` (or `Command + V` for macOS) or `Shift + Insert` shortcut to paste and parse activation code QR images from the clipboard.
 
-> ![Notification - Selector Usage](https://github.com/EsimMoe/MiniLPA/raw/main/assets/通知-选择器使用.apng)
+> ![Notification - Selector Usage](assets/通知-选择器使用.apng)
 > Click the checkbox on the right side of the notification item in the notification page to enter selection mode.
 > In selection mode, click other items to select or deselect them. You can also use the quick selector in the upper right corner to select all, batch select, exit selection mode.  
 > By pressing `Shift` and clicking, you can select the items between the last click and the current click.  
@@ -97,9 +96,16 @@ Other distributions are also viable, but there's no guarantee that they will wor
 
 ## Building
 > [!NOTE]  
-> Building requires JDK 21. On Windows, use `gradlew.bat` instead of `./gradlew`.
+> Building requires JDK 21. On Windows, use `gradlew.bat` instead of `./gradlew`.  
+> The first build downloads lpac (pinned to a release and checked against its SHA-256) and eUICC data from osmocom, so it needs network access.
 
 ```shell
+# Run from source (settings and logs go in the project folder)
+./gradlew run
+
+# Tests
+./gradlew test
+
 # Jar (build/libs/MiniLPA-all.jar)
 # -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86, linux_aarch64]    Specify the platforms whose lpac is bundled (default: current platform)
 ./gradlew shadowJar
@@ -117,12 +123,12 @@ Other distributions are also viable, but there's no guarantee that they will wor
 - [ ] Camera scanning
 
 ## Feedback
-We welcome any feedback. If you have any questions or suggestions, please go to [Issues](https://github.com/EsimMoe/MiniLPA/issues) section to open a new ticket for support.  
+We welcome any feedback. If you have any questions or suggestions, please go to [Issues](https://github.com/shawcx/MiniLPA/issues) section to open a new ticket for support.  
 Please note that this project is a public welfare project. Your feedback may be closed or not processed.
 
 > [!IMPORTANT]  
 > #### Things to Confirm Before Providing Feedback
-> - Find out if there are similar [issues](https://github.com/EsimMoe/MiniLPA/issues)
+> - Find out if there are similar [issues](https://github.com/shawcx/MiniLPA/issues)
 > - Use the recommended `Java` runtime distribution for this project
 > - Use the latest builds from CI
 > - Describe your problem **completely and in detail**
@@ -144,6 +150,11 @@ Please note that this project is a public welfare project. Your feedback may be 
 > Meanwhile, `enable` and `disable` notifications, in most cases, do not have a significant impact even if not sent or removed.  
 > To improve switching speed and protect privacy, sending and removal are not performed by default.  
 > If users wish to comply with GSMA standards, they can go to `Settings` - `Behavior` and check all options related to notification sending and removal.
+
+> #### Where are settings and logs stored?
+> In the `.minilpa` folder in your home folder (`~/.minilpa`, or `%USERPROFILE%\.minilpa` on Windows), for every build.  
+> Older standalone jar and app-image builds kept them in the folder MiniLPA was started from; copy `setting.yaml` from there into `.minilpa` to keep your settings.  
+> When running from source with `./gradlew run`, they are kept in the project folder.
 
 > #### Why do software windows look small on Linux with HiDPI screens?
 > On Linux, there are various display solutions, and the mainline `Java` does not finely adapt to HiDPI scaling in all solutions.
