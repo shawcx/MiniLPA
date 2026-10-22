@@ -1,10 +1,9 @@
 
 import com.github.gmazzo.buildconfig.BuildConfigTask
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import java.io.InputStream
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -20,11 +19,6 @@ import kotlin.io.path.pathString
 import kotlin.io.path.readAttributes
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.apache.commons.lang3.ArchUtils
 import org.apache.commons.lang3.SystemUtils
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -96,8 +90,6 @@ buildscript {
 
     dependencies {
         classpath("org.apache.commons:commons-lang3:3.21.0")
-        classpath("io.ktor:ktor-client-core:3.6.0")
-        classpath("io.ktor:ktor-client-cio:3.6.0")
     }
 }
 
@@ -200,7 +192,7 @@ tasks.register("setupResources")
         {
             if (euiccManifests.keys.any { resourcesPath.resolve(it).notExists() } || eUICCInfoUpdateTimePath.notExists())
             {
-                runBlocking { downloadEuiccInfo() }
+                downloadEuiccInfo()
             }
 
             val platforms = if (target == "all") lpacPlatformToArtifact.keys else listOf(target)
@@ -208,7 +200,7 @@ tasks.register("setupResources")
                 val zipPath = buildPath.resolve("lpac").resolve("$platform.zip")
                 zipPath.notExists() || Files.readAllBytes(zipPath).sha256() != lpacPlatformToArtifact.getValue(platform).sha256
             }
-            runBlocking { outdated.map { async { downloadlpac(it) } }.awaitAll() }
+            outdated.forEach { downloadlpac(it) }
 
             FileSystems.newFileSystem(languagePackPath, mapOf("create" to true)).use { fs ->
                 val languages = projectDir.toPath().resolve("src/main/languages/")
@@ -227,7 +219,7 @@ tasks.register("setupResources")
 tasks.register("updateEuiccInfo")
 {
     group = "Package"
-    doLast { runBlocking { downloadEuiccInfo() } }
+    doLast { downloadEuiccInfo() }
 }
 
 tasks.register("setupjpackage")
@@ -368,35 +360,32 @@ fun getPlatformInfo() : String
     return "${os}_${arch}"
 }
 
-val client = HttpClient()
-suspend fun downloadlpac(platform : String)
+// GitHub release downloads redirect to another https host, which NORMAL follows
+val httpClient : HttpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build()
+
+fun download(url : String) : ByteArray
+{
+    val response = httpClient.send(HttpRequest.newBuilder(URI(url)).build(), HttpResponse.BodyHandlers.ofByteArray())
+    if (response.statusCode() !in 200..299) throw IllegalStateException("Downloading $url failed with HTTP ${response.statusCode()}")
+    return response.body()
+}
+
+fun downloadlpac(platform : String)
 {
     val artifact = lpacPlatformToArtifact.getValue(platform)
-    val response = client.get("https://github.com/estkme-group/lpac/releases/download/$lpacVersion/${artifact.name}.zip")
-    if (!response.status.isSuccess()) throw IllegalStateException("Network error")
-    val zip = response.body<ByteArray>()
+    val zip = download("https://github.com/estkme-group/lpac/releases/download/$lpacVersion/${artifact.name}.zip")
     val sha256 = zip.sha256()
     if (sha256 != artifact.sha256) throw IllegalStateException("${artifact.name}.zip SHA-256 is $sha256, expected ${artifact.sha256}")
-    withContext(Dispatchers.IO) {
-        val lpacFolderPath = buildPath.resolve("lpac")
-        Files.createDirectories(lpacFolderPath)
-        Files.write(lpacFolderPath.resolve("$platform.zip"), zip)
-    }
+    val lpacFolderPath = buildPath.resolve("lpac")
+    Files.createDirectories(lpacFolderPath)
+    Files.write(lpacFolderPath.resolve("$platform.zip"), zip)
 }
 
 fun ByteArray.sha256() = MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { "%02x".format(it) }
 
-suspend fun downloadEuiccInfo()
+fun downloadEuiccInfo()
 {
-    for ((name, url) in euiccManifests)
-    {
-        val response = client.get(url)
-        if (!response.status.isSuccess()) throw IllegalStateException("Network error")
-        withContext(Dispatchers.IO) {
-            Files.newOutputStream(resourcesPath.resolve(name)).buffered()
-                .use { out -> response.body<InputStream>().buffered().use { `in` -> `in`.copyTo(out) } }
-        }
-    }
+    for ((name, url) in euiccManifests) Files.write(resourcesPath.resolve(name), download(url))
     Files.createDirectories(buildPath)
     eUICCInfoUpdateTimePath.writeText("${System.currentTimeMillis()}")
 }
