@@ -36,9 +36,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build Native Executable
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/Build.ps1 -NativeExecutable -NativeExecutableType ${{ matrix.type }}
+          ./gradlew jpackage -Ptype=${{ matrix.type }} --info --stacktrace
 
       - name: Get Short Commit Id
         shell: pwsh
@@ -80,9 +80,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build Native Executable
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/Build.ps1 -NativeExecutable -NativeExecutableType ${{ matrix.type }} -NativeWayland:$${{ matrix.wayland }} -GithubToken ${{ secrets.GITHUB_TOKEN }}
+          ./gradlew jpackage -Ptype=${{ matrix.type }} ${{ matrix.wayland && '-Pnative-wayland' || '' }} -Pgithub-token=${{ secrets.GITHUB_TOKEN }} --info --stacktrace
 
       - name: Get Short Commit Id
         shell: pwsh
@@ -112,9 +112,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build Standalone Jar
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/Build.ps1 -Target all
+          ./gradlew shadowJar -Ptarget=all --info --stacktrace
 
       - name: Get Short Commit Id
         shell: pwsh

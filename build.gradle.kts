@@ -6,8 +6,12 @@ import io.ktor.http.*
 import java.io.InputStream
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.UUID
+import kotlin.io.path.extension
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 import kotlin.io.path.notExists
 import kotlin.io.path.pathString
@@ -103,6 +107,10 @@ buildscript {
     }
 }
 
+val commitId = git("rev-parse", "HEAD")
+val isDirty = git("diff", "--no-ext-diff", "--quiet", "--exit-code") == null
+val shortCommitId = git("rev-parse", "--short", "HEAD")?.let { if (isDirty) "$it-dirty" else it }
+
 buildConfig {
     packageName("moe.sekiu.minilpa")
     buildConfigField("IS_PACKAGED",
@@ -110,7 +118,7 @@ buildConfig {
                 && project.findProperty("type") != "app-image"
     )
     buildConfigField("VERSION", "$version")
-    buildConfigField("SHORT_COMMIT_ID", project.findProperty("short-commit-id") as String? ?: "internal")
+    buildConfigField("SHORT_COMMIT_ID", project.findProperty("short-commit-id") as String? ?: shortCommitId ?: "internal")
 }
 
 application {
@@ -141,11 +149,34 @@ val lpacPlatformToArtifact = mapOf(
     "linux_x86" to "lpac-linux-x86_64"
 )
 
+val euiccManifests = mapOf(
+    "eum-manifest.json" to "https://euicc-manual.osmocom.org/docs/pki/eum/manifest.json",
+    "ci-manifest.json" to "https://euicc-manual.osmocom.org/docs/pki/ci/manifest.json"
+)
+
 val buildPath = layout.buildDirectory.asFile.get().toPath()
 val jpackagePath = buildPath.resolve("jpackage")
+val distPath = buildPath.resolve("dist")
+val appImagePath = distPath.resolve(if (SystemUtils.IS_OS_MAC_OSX) "${project.name}.app" else project.name)
+val resourcesPath = projectDir.toPath().resolve("src/main/resources")
+val eUICCInfoUpdateTimePath = buildPath.resolve("euicc_info_update_time")
 val archiveFileName = tasks.shadowJar.get().archiveFileName.get()
 val target = project.findProperty("target")?.toString()?.lowercase() ?: getPlatformInfo()
+val packageType = project.findProperty("type")?.toString()
 val githubToken = project.findProperty("github-token")?.toString()
+
+val distName by lazy {
+    val os = if (SystemUtils.IS_OS_WINDOWS) "Windows"
+    else if (SystemUtils.IS_OS_LINUX) "Linux"
+    else if (SystemUtils.IS_OS_MAC_OSX) "macOS"
+    else throw UnsupportedOperationException("Unsupported os ${SystemUtils.OS_NAME}")
+
+    val processor = ArchUtils.getProcessor()
+    val arch = if (processor.isX86 && processor.is64Bit) "x86_64"
+    else if (processor.isAarch64) "aarch64"
+    else throw UnsupportedOperationException("Unsupported arch ${processor.type.label}")
+    if (project.hasProperty("native-wayland")) "${project.name}-$os-$arch-Wayland" else "${project.name}-$os-$arch"
+}
 
 val latestRelease : GHRelease by lazy {
     val gitHub = if (githubToken != null) GitHub.connectUsingOAuth(githubToken) else GitHub.connectAnonymously()
@@ -166,10 +197,14 @@ task("setupResources")
         var lpacBuildTime = if (lpacBuildTimePath.notExists()) 0
         else Files.readString(lpacBuildTimePath).toLong()
         val languagePackPath = buildPath.resolve("languages.zip")
-        val eUICCInfoUpdateTimePath = buildPath.resolve("euicc_info_update_time")
 
         if (!skip)
         {
+            if (euiccManifests.keys.any { resourcesPath.resolve(it).notExists() } || eUICCInfoUpdateTimePath.notExists())
+            {
+                runBlocking { downloadEuiccInfo() }
+            }
+
             val lpacLatestBuildTime = latestRelease.createdAt.time
             if (target == "all" ||
                 buildPath.resolve("lpac").notExists() ||
@@ -203,6 +238,12 @@ task("setupResources")
     }
 }
 
+task("updateEuiccInfo")
+{
+    group = "Package"
+    doLast { runBlocking { downloadEuiccInfo() } }
+}
+
 task("setupjpackage")
 {
     group = "Package"
@@ -219,6 +260,7 @@ task("setupjpackage")
 }
 
 tasks.processResources {
+    dependsOn("setupResources")
     if (target == "all")
     {
         from(*lpacPlatformToArtifact.keys.map { buildPath.resolve("lpac").resolve("$it.zip") }.toTypedArray())
@@ -246,7 +288,7 @@ tasks.jpackage {
     group = "Package"
     dependsOn("setupjpackage")
     input = jpackagePath.pathString
-    destination = buildPath.resolve("dist").pathString
+    destination = distPath.pathString
     appName = project.name
     vendor = "esim.moe"
     mainJar = archiveFileName
@@ -291,6 +333,20 @@ tasks.jpackage {
             macAppCategory = "MiniLPA"
         }
     }
+
+    if (packageType == "app-image") finalizedBy("zipAppImage")
+    else doLast { renameDistFiles() }
+}
+
+task<Zip>("zipAppImage")
+{
+    dependsOn("jpackage")
+    destinationDirectory = distPath.toFile()
+    archiveFileName = provider { "$distName.zip" }
+    // A macOS app-image is a .app bundle, so the bundle itself is the archive root; elsewhere it's the folder's contents
+    if (SystemUtils.IS_OS_MAC_OSX) from(distPath) { include("${appImagePath.name}/**") }
+    else from(appImagePath)
+    doLast { appImagePath.toFile().deleteRecursively() }
 }
 
 fun getPlatformInfo() : String
@@ -321,6 +377,56 @@ suspend fun downloadlpac(platform : String)
             .use { out -> response.body<InputStream>().buffered().use { `in` -> `in`.copyTo(out) } }
     }
 }
+
+suspend fun downloadEuiccInfo()
+{
+    for ((name, url) in euiccManifests)
+    {
+        val response = client.get(url)
+        if (!response.status.isSuccess()) throw IllegalStateException("Network error")
+        withContext(Dispatchers.IO) {
+            Files.newOutputStream(resourcesPath.resolve(name)).buffered()
+                .use { out -> response.body<InputStream>().buffered().use { `in` -> `in`.copyTo(out) } }
+        }
+    }
+    Files.createDirectories(buildPath)
+    eUICCInfoUpdateTimePath.writeText("${System.currentTimeMillis()}")
+}
+
+fun renameDistFiles()
+{
+    // jpackage names installers like MiniLPA-1.1.1.dmg or minilpa_1.1.1_amd64.deb
+    val jpackageOutput = Regex("${project.name}[-_]\\d.*", RegexOption.IGNORE_CASE)
+    Files.list(distPath).use { it.toList() }
+        .filter { it.isRegularFile() && jpackageOutput.matches(it.name) && (packageType == null || it.extension == packageType) }
+        .forEach { path ->
+            val distFilePath = distPath.resolve("$distName.${path.extension}")
+            Files.move(path, distFilePath, StandardCopyOption.REPLACE_EXISTING)
+            if (distFilePath.extension == "msi") updateMsiProductCode(distFilePath)
+        }
+}
+
+fun updateMsiProductCode(msiPath : Path)
+{
+    // One ProductCode per commit lets an msi install over another build of the same version
+    val productCode = commitId?.takeUnless { isDirty }?.let { UUID.nameUUIDFromBytes(it.toByteArray()) } ?: UUID.randomUUID()
+    providers.exec {
+        commandLine(
+            "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+            "-File", projectDir.resolve("scripts/Update-MSI-ProductCode.ps1").path,
+            "-Path", msiPath.pathString,
+            "-ProductCode", "{${productCode.toString().uppercase()}}"
+        )
+    }.result.get()
+}
+
+fun git(vararg args : String) : String? = runCatching {
+    val output = providers.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }
+    if (output.result.get().exitValue == 0) output.standardOutput.asText.get().trim() else null
+}.getOrNull()
 
 fun Project.switchProperty(propertyName : String) : Boolean
 {

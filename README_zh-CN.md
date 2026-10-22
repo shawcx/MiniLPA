@@ -98,16 +98,21 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 ## 构建
 > [!NOTE]  
-> 本项目需要使用 PowerShell 脚本进行构建, 请提前安装
+> 构建需要 JDK 21, Windows 下请使用 `gradlew.bat` 代替 `./gradlew`
 
 ```shell
-pwsh
-# -NativeExecutable 构建二进制可执行文件
-# -NativeExecutableType [app-image, exe, msi, rpm, deb, pkg, dmg] 指定构建的可执行文件类型
-# -NativeWayland 启用原生 Wayland 支持
-# -SkipSetupResources 跳过初始化资源
-# -GithubToken 指定初始化资源时使用的 Github 令牌
-scripts/Build.ps1
+# Jar (build/libs/MiniLPA-all.jar)
+# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86] 指定打包 lpac 的平台 (默认为当前平台)
+./gradlew shadowJar
+
+# 二进制可执行文件 (build/dist/)
+# -Ptype=[app-image, exe, msi, rpm, deb, pkg, dmg] 指定构建的可执行文件类型
+# -Pnative-wayland 启用原生 Wayland 支持
+./gradlew jpackage -Ptype=app-image
+
+# 通用选项
+# -Pskip-setup-resources 跳过初始化资源
+# -Pgithub-token=<令牌> 指定初始化资源时使用的 Github 令牌
 ```
 
 ## 待办事项清单

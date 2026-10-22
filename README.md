@@ -97,16 +97,21 @@ Other distributions are also viable, but there's no guarantee that they will wor
 
 ## Building
 > [!NOTE]  
-> This project requires using PowerShell scripts for building, please install in advance.
+> Building requires JDK 21. On Windows, use `gradlew.bat` instead of `./gradlew`.
 
 ```shell
-pwsh
-# -NativeExecutable    Build binary executables
-# -NativeExecutableType [app-image, exe, msi, rpm, deb, pkg, dmg]    Specify the type of executable to build
-# -NativeWayland    Enable Native Wayland Support
-# -SkipSetupResources    Skip initializing resources
-# -GithubToken    Specify the Github token to use when initializing the resource
-scripts/Build.ps1
+# Jar (build/libs/MiniLPA-all.jar)
+# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86]    Specify the platforms whose lpac is bundled (default: current platform)
+./gradlew shadowJar
+
+# Binary executable (build/dist/)
+# -Ptype=[app-image, exe, msi, rpm, deb, pkg, dmg]    Specify the type of executable to build
+# -Pnative-wayland    Enable Native Wayland Support
+./gradlew jpackage -Ptype=app-image
+
+# Options for both
+# -Pskip-setup-resources    Skip initializing resources
+# -Pgithub-token=<token>    Specify the Github token to use when initializing the resource
 ```
 
 ## Todo List

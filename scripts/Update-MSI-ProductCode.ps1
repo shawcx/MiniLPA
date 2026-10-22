@@ -4,6 +4,8 @@ param(
     [String]$ProductCode
 )
 
+$ErrorActionPreference = 'Stop'
+
 $WindowsInstaller = New-Object -com WindowsInstaller.Installer
 $Database = $WindowsInstaller.OpenDatabase($Path, 2)
 $Query = "UPDATE Property SET Property.Value='$ProductCode' WHERE Property.Property='ProductCode'"
