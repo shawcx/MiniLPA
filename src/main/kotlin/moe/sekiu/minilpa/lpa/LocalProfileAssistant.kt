@@ -162,7 +162,7 @@ object LocalProfileAssistant
             mainFrame.progressInfo.text = language.`notification-get-list`
             NotificationList.instance.refreshNotificationData()
             mainFrame.progressBar.swipePlusAuto()
-            if (setting.`notification-behavior`.enable.process) mainFrame.tryExecute {
+            if (setting.`notification-behavior`.disable.process) mainFrame.tryExecute {
                 processNotificationSingleStage(iccid, Notification.Operation.DISABLE, setting.`notification-behavior`.disable.remove)
             }
             mainFrame.progressInfo.text = language.`get-chip-info`
@@ -190,7 +190,7 @@ object LocalProfileAssistant
             mainFrame.progressInfo.text = language.`notification-get-list`
             NotificationList.instance.refreshNotificationData()
             mainFrame.progressBar.swipePlusAuto()
-            if (setting.`notification-behavior`.enable.process) mainFrame.tryExecute {
+            if (processNotification) mainFrame.tryExecute {
                 processNotificationSingleStage(iccid, Notification.Operation.DELETE, removeNotification)
             }
             mainFrame.progressInfo.text = language.`get-chip-info`
