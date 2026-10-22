@@ -112,7 +112,6 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 # 通用选项
 # -Pskip-setup-resources 跳过初始化资源
-# -Pgithub-token=<令牌> 指定初始化资源时使用的 Github 令牌
 ```
 
 ## 待办事项清单

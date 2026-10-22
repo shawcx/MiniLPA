@@ -111,7 +111,6 @@ Other distributions are also viable, but there's no guarantee that they will wor
 
 # Options for both
 # -Pskip-setup-resources    Skip initializing resources
-# -Pgithub-token=<token>    Specify the Github token to use when initializing the resource
 ```
 
 ## Todo List

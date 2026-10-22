@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
+import java.security.MessageDigest
 import java.util.UUID
 import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
@@ -26,8 +27,6 @@ import kotlinx.coroutines.withContext
 import org.apache.commons.lang3.ArchUtils
 import org.apache.commons.lang3.SystemUtils
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import org.kohsuke.github.GHRelease
-import org.kohsuke.github.GitHub
 import org.panteleyev.jpackage.ImageType
 
 plugins {
@@ -100,7 +99,6 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.kohsuke:github-api:1.324")
         classpath("org.apache.commons:commons-lang3:3.17.0")
         classpath("io.ktor:ktor-client-core:3.0.0-beta-2")
         classpath("io.ktor:ktor-client-cio:3.0.0-beta-2")
@@ -142,11 +140,17 @@ kotlin {
     jvmToolchain(21)
 }
 
+data class LpacArtifact(val name : String, val sha256 : String)
+
+// lpac is pinned to one release and each download is checked against its SHA-256; bump all of these together
+val lpacVersion = "v2.3.0"
+// The release's creation time; the app re-extracts its bundled lpac when this increases
+val lpacReleaseTime = 1755274668000L
 val lpacPlatformToArtifact = mapOf(
-    "macos_universal" to "lpac-darwin-universal",
-    "windows_x86" to "lpac-windows-x86_64-mingw",
-    "windows_aarch64" to "lpac-windows-arm64-mingw",
-    "linux_x86" to "lpac-linux-x86_64"
+    "macos_universal" to LpacArtifact("lpac-darwin-universal", "13115f5a6ce632d7b4799d236de3b99175aa28eb4827b5301b2a9576b83747f1"),
+    "windows_x86" to LpacArtifact("lpac-windows-x86_64-mingw", "4781e8673d19c08c41cd104e8bc59f901e352eb10e8c952bcf2aa199a915ea6f"),
+    "windows_aarch64" to LpacArtifact("lpac-windows-arm64-mingw", "9b0ef205d60b4fbe459459123e38ff7cb8b29b7091b33a62d267947b10d501ad"),
+    "linux_x86" to LpacArtifact("lpac-linux-x86_64", "a6ff503719f3d57d6af09d6dc9ffc1567ecabfae50693130edc74654b26c64cb")
 )
 
 val euiccManifests = mapOf(
@@ -163,7 +167,6 @@ val eUICCInfoUpdateTimePath = buildPath.resolve("euicc_info_update_time")
 val archiveFileName = tasks.shadowJar.get().archiveFileName.get()
 val target = project.findProperty("target")?.toString()?.lowercase() ?: getPlatformInfo()
 val packageType = project.findProperty("type")?.toString()
-val githubToken = project.findProperty("github-token")?.toString()
 
 val distName by lazy {
     val os = if (SystemUtils.IS_OS_WINDOWS) "Windows"
@@ -178,14 +181,6 @@ val distName by lazy {
     if (project.hasProperty("native-wayland")) "${project.name}-$os-$arch-Wayland" else "${project.name}-$os-$arch"
 }
 
-val latestRelease : GHRelease by lazy {
-    val gitHub = if (githubToken != null) GitHub.connectUsingOAuth(githubToken) else GitHub.connectAnonymously()
-    val repository = gitHub.getRepository("estkme-group/lpac")
-    repository.latestRelease
-}
-
-val listAssets by lazy { latestRelease.listAssets().toList() }
-
 tasks.generateBuildConfig { dependsOn("setupResources") }
 
 task("setupResources")
@@ -193,9 +188,6 @@ task("setupResources")
     group = "Package"
     doLast {
         val skip = project.switchProperty("skip-setup-resources")
-        val lpacBuildTimePath = buildPath.resolve("lpac_build_time")
-        var lpacBuildTime = if (lpacBuildTimePath.notExists()) 0
-        else Files.readString(lpacBuildTimePath).toLong()
         val languagePackPath = buildPath.resolve("languages.zip")
 
         if (!skip)
@@ -205,24 +197,12 @@ task("setupResources")
                 runBlocking { downloadEuiccInfo() }
             }
 
-            val lpacLatestBuildTime = latestRelease.createdAt.time
-            if (target == "all" ||
-                buildPath.resolve("lpac").notExists() ||
-                buildPath.resolve("lpac").resolve(target).notExists() ||
-                lpacLatestBuildTime > lpacBuildTime)
-            {
-                if (target == "all")
-                {
-                    runBlocking { lpacPlatformToArtifact.keys.map { async { downloadlpac(it) } }.awaitAll() }
-                }
-                else
-                {
-                    lpacPlatformToArtifact[target] ?: throw IllegalArgumentException("Unknown target $target\nValid values are: [${lpacPlatformToArtifact.keys.joinToString(", ")}]")
-                    runBlocking { downloadlpac(target) }
-                }
-                lpacBuildTimePath.writeText("$lpacLatestBuildTime")
-                lpacBuildTime = lpacLatestBuildTime
+            val platforms = if (target == "all") lpacPlatformToArtifact.keys else listOf(target)
+            val outdated = platforms.filter { platform ->
+                val zipPath = buildPath.resolve("lpac").resolve("$platform.zip")
+                zipPath.notExists() || Files.readAllBytes(zipPath).sha256() != lpacPlatformToArtifact.getValue(platform).sha256
             }
+            runBlocking { outdated.map { async { downloadlpac(it) } }.awaitAll() }
 
             FileSystems.newFileSystem(languagePackPath, mapOf("create" to true)).use { fs ->
                 val languages = projectDir.toPath().resolve("src/main/languages/")
@@ -231,7 +211,7 @@ task("setupResources")
         }
 
         buildConfig {
-            buildConfigField("LPAC_BUILD_TIME", lpacBuildTime)
+            buildConfigField("LPAC_BUILD_TIME", lpacReleaseTime)
             buildConfigField("LANGUAGE_PACK_UPDATE_TIME", languagePackPath.readAttributes<BasicFileAttributes>().lastModifiedTime().toMillis())
             buildConfigField("EUICC_INFO_UPDATE_TIME", eUICCInfoUpdateTimePath.readText().toLong())
         }
@@ -367,16 +347,20 @@ fun getPlatformInfo() : String
 val client = HttpClient()
 suspend fun downloadlpac(platform : String)
 {
-    val asset = listAssets.first { it.name == "${lpacPlatformToArtifact[platform]}.zip" }
-    val response = client.get(asset.browserDownloadUrl)
+    val artifact = lpacPlatformToArtifact.getValue(platform)
+    val response = client.get("https://github.com/estkme-group/lpac/releases/download/$lpacVersion/${artifact.name}.zip")
     if (!response.status.isSuccess()) throw IllegalStateException("Network error")
+    val zip = response.body<ByteArray>()
+    val sha256 = zip.sha256()
+    if (sha256 != artifact.sha256) throw IllegalStateException("${artifact.name}.zip SHA-256 is $sha256, expected ${artifact.sha256}")
     withContext(Dispatchers.IO) {
         val lpacFolderPath = buildPath.resolve("lpac")
         Files.createDirectories(lpacFolderPath)
-        Files.newOutputStream(lpacFolderPath.resolve("$platform.zip")).buffered()
-            .use { out -> response.body<InputStream>().buffered().use { `in` -> `in`.copyTo(out) } }
+        Files.write(lpacFolderPath.resolve("$platform.zip"), zip)
     }
 }
+
+fun ByteArray.sha256() = MessageDigest.getInstance("SHA-256").digest(this).joinToString("") { "%02x".format(it) }
 
 suspend fun downloadEuiccInfo()
 {
