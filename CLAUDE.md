@@ -32,7 +32,8 @@ Requirements: JDK 21 (Gradle toolchain; Gradle 9 itself needs JDK 17+) and a PC/
   - An `app-image` build is zipped by `zipAppImage`.
   - On macOS that zip is made with `ditto`. Gradle's `Zip` would replace the symlinks inside the signed `.app` with copies and break the code signature.
 - **Dependency verification** is on: `gradle/verification-metadata.xml` pins the SHA-256 of every plugin and dependency.
-  - After adding or changing a dependency, regenerate it with `./gradlew --write-verification-metadata sha256 build jpackage -Ptype=app-image`, then review the diff.
+  - After adding or changing a dependency, regenerate it from an empty Gradle home: `GRADLE_USER_HOME=$(mktemp -d) ./gradlew --write-verification-metadata sha256 build jpackage -Ptype=app-image`. Then review the diff.
+  - With a warm cache, Gradle doesn't record the BOMs that POMs import. CI starts with an empty cache and fails on them.
   - `./gradlew dependencyUpdates` lists newer versions. It also reports betas and RCs as releases.
 - Windows `.msi` builds get a per-commit ProductCode from `scripts/Update-MSI-ProductCode.ps1`, which Gradle runs through Windows PowerShell. It's the only remaining script.
 - Tests live in `src/test/kotlin`. Keep them away from the globals in `Main.kt`: initializing those sets up logging and writes settings and language files. There's no lint step.
