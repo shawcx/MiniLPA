@@ -33,7 +33,7 @@ This is a fork of [EsimMoe/MiniLPA](https://github.com/EsimMoe/MiniLPA). Compare
 - **Privacy**: logs mask EIDs and ICCIDs and hide activation codes, confirmation codes and IMEIs, so they are safe to attach to issues.
 - **Security**: lpac is pinned to a release and checked against its SHA-256, and Gradle verifies every dependency.
   Settings and the bundled lpac always live in `~/.minilpa`, never in the folder MiniLPA was started from.
-- **Builds**: plain Gradle with no PowerShell, current Gradle, Kotlin and libraries, Linux arm64 lpac in the standalone jar, and macOS app-image zips that keep their code signature.
+- **Builds**: plain Gradle with no PowerShell, current Gradle, Kotlin and libraries, arm64 packages for Linux and Windows, and macOS app-image zips that keep their code signature.
 - **Removed**: the unfinished remote LPA backend and the Telegram release pushes.
 
 

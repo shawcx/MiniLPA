@@ -34,7 +34,7 @@
 - **隐私**: 日志会遮盖 EID 与 ICCID, 并隐藏激活码、确认码与 IMEI, 可以放心附在议题中
 - **安全**: lpac 固定为指定版本并校验 SHA-256, Gradle 会校验所有依赖  
   设置与内置的 lpac 始终位于 `~/.minilpa`, 不会从启动 MiniLPA 时所在的文件夹读取
-- **构建**: 仅需 Gradle 无需 PowerShell, 已更新 Gradle、Kotlin 与各依赖库, 独立 jar 内置 Linux arm64 版 lpac, macOS app-image 压缩包保留代码签名
+- **构建**: 仅需 Gradle 无需 PowerShell, 已更新 Gradle、Kotlin 与各依赖库, 提供 Linux 与 Windows 的 arm64 安装包, macOS app-image 压缩包保留代码签名
 - **移除**: 未完成的远程 LPA 后端, 以及 Telegram 发布推送
 
 
