@@ -11,5 +11,5 @@
 .DS_Store
 .gradle
 build
-eum-manifest.json
+eum-accredited.json
 ci-manifest.json

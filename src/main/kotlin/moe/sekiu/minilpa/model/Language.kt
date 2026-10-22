@@ -78,7 +78,6 @@ data class Language @JvmOverloads constructor(
     val `edit-default-SMDP+-address-message` : String = "Please enter a new Default SMDP+ Address",
     val manufacturer : String = "Manufacturer:",
     val unknown : String = "Unknown",
-    val `secure-element` : String = "Secure Element: %s",
     val `certificate-issuers` : String = "Certificate Issuers",
     val `open-external-link` : String = "Open External Link",
 

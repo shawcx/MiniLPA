@@ -6,8 +6,6 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import java.io.File
 import java.io.InputStream
-import java.nio.file.FileSystems
-import kotlin.io.path.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -16,7 +14,6 @@ import kotlinx.serialization.json.decodeFromStream
 import moe.sekiu.minilpa.BuildConfig
 import moe.sekiu.minilpa.appDataFolder
 import moe.sekiu.minilpa.bufferedResourceStream
-import moe.sekiu.minilpa.cast
 import moe.sekiu.minilpa.json
 import moe.sekiu.minilpa.language
 import moe.sekiu.minilpa.openLink
@@ -28,7 +25,7 @@ sealed class Manifest<T : Any>
     abstract val updateURL : String
     val data : MutableList<T> = mutableListOf()
 
-    internal inline fun <reified T> loadManifest0() : Boolean
+    internal inline fun <reified R> loadManifest0(entries : (R) -> List<T>) : Boolean
     {
         var update = false
         val file = File(appDataFolder, path)
@@ -37,9 +34,9 @@ sealed class Manifest<T : Any>
             file.outputStream().buffered().use { out -> bufferedResourceStream(path).use { `in` -> `in`.copyTo(out) } }
             update = true
         }
-        val list = file.inputStream().buffered().use { `in` -> json.decodeFromStream<List<T>>(`in`) }
+        val manifest = file.inputStream().buffered().use { `in` -> json.decodeFromStream<R>(`in`) }
         data.clear()
-        data.addAll(list.cast())
+        data.addAll(entries(manifest))
         return update
     }
 
@@ -77,49 +74,29 @@ sealed class Manifest<T : Any>
     }
 }
 
-data object EumManifest : Manifest<EumManifest.Manufacturer>()
+data object EumManifest : Manifest<EumManifest.Supplier>()
 {
-    override val path = "eum-manifest.json"
-    override val updateURL = "https://euicc-manual.osmocom.org/docs/pki/eum/manifest.json"
-    val eums = data
+    override val path = "eum-accredited.json"
+    override val updateURL = "https://euicc-manual.osmocom.org/docs/pki/eum/accredited.json"
+    val suppliers = data
 
-    override fun loadManifest() = loadManifest0<Manufacturer>()
+    override fun loadManifest() = loadManifest0<Accredited> { it.suppliers }
 
     @Serializable
-    data class Manufacturer(
-        val eum : String,
+    data class Accredited(val suppliers : List<Supplier>)
+
+    @Serializable
+    data class Supplier(
+        val name : String,
+        val abbr : String? = null,
         val country : String,
-        val manufacturer : String,
-        val products : List<Product> = emptyList()
+        val eum : List<String> = emptyList()
     )
     {
-        @Serializable
-        data class Product(
-            val pattern : String,
-            val name : String,
-            val chip : String? = null
-        )
+        val shortName get() = abbr ?: name
     }
 
-    fun findEum(eid : String) : Manufacturer?
-    {
-        for (eum in eums)
-        {
-            if (eid.startsWith(eum.eum)) return eum
-        }
-        return null
-    }
-
-    fun findProduct(eum : Manufacturer, eid : String) : Manufacturer.Product?
-    {
-        val path = Path(eid)
-        for (product in eum.products)
-        {
-            val matcher = FileSystems.getDefault().getPathMatcher("glob:${product.pattern}")
-            if (matcher.matches(path)) return product
-        }
-        return null
-    }
+    fun findSupplier(eid : String) : Supplier? = suppliers.find { supplier -> supplier.eum.any { eid.startsWith(it) } }
 }
 
 data object CIManifest : Manifest<CIManifest.CertificateIssuer>()
@@ -128,7 +105,7 @@ data object CIManifest : Manifest<CIManifest.CertificateIssuer>()
     override val updateURL = "https://euicc-manual.osmocom.org/docs/pki/ci/manifest.json"
     val cis = data
 
-    override fun loadManifest() = loadManifest0<CertificateIssuer>()
+    override fun loadManifest() = loadManifest0<List<CertificateIssuer>> { it }
 
     @Serializable
     data class CertificateIssuer(

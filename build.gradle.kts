@@ -150,7 +150,7 @@ val lpacPlatformToArtifact = mapOf(
 )
 
 val euiccManifests = mapOf(
-    "eum-manifest.json" to "https://euicc-manual.osmocom.org/docs/pki/eum/manifest.json",
+    "eum-accredited.json" to "https://euicc-manual.osmocom.org/docs/pki/eum/accredited.json",
     "ci-manifest.json" to "https://euicc-manual.osmocom.org/docs/pki/ci/manifest.json"
 )
 

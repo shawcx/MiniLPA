@@ -57,22 +57,12 @@ class ChipInfo(var chipInfo : ChipInfo) : JPanel()
             }
         }
         var manufacturer = language.unknown
-        var secureElement = ""
-        val eum = EumManifest.findEum(chipInfo.eid)
-        if (eum != null)
+        val supplier = EumManifest.findSupplier(chipInfo.eid)
+        if (supplier != null)
         {
-            manufacturer = eum.manufacturer
-            countryFlag.icon = ImageIcon(eum.country.toCountryFlagImage().resize(20, 20), eum.country.uppercase())
-            countryFlag.toolTipText = eum.country.uppercase()
-            val product = EumManifest.findProduct(eum, chipInfo.eid)
-            if (product != null)
-            {
-                manufacturer += " (${product.name})"
-                if (product.chip != null)
-                {
-                    secureElement = language.`secure-element`.format(product.chip)
-                }
-            }
+            manufacturer = supplier.shortName
+            countryFlag.icon = ImageIcon(supplier.country.toCountryFlagImage().resize(20, 20), supplier.country.uppercase())
+            countryFlag.toolTipText = supplier.country.uppercase()
         }
 
         val certificateIssuers = JButton(language.`certificate-issuers`, FlatSVGIcon("icons/chip-certificate.svg", 20, 20))
@@ -82,7 +72,7 @@ class ChipInfo(var chipInfo : ChipInfo) : JPanel()
         certificateIssuers.putClientProperty(FlatClientProperties.STYLE, "font: 130% \$light.font")
 
         add(MiniBidirectionalPanel(MiniGroup(eid, copyEid), MiniGroup(JLabel(language.manufacturer).setup(), countryFlag, JLabel(manufacturer).setup())))
-        add(MiniBidirectionalPanel(MiniGroup(defaultSMDPAddr, editDefaultSMDPAddr), JLabel(secureElement).setup()))
+        add(MiniGroup(defaultSMDPAddr, editDefaultSMDPAddr))
         add(MiniBidirectionalPanel(MiniGroup(rootSMDSAddr, copyRootSMDSAddr), certificateIssuers))
         add("cell 0 3, span, push, grow", JScrollPane(MiniJsonTree("eUICCInfo2", chipInfo.eUICCInfo2)))
     }
