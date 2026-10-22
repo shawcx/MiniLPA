@@ -60,7 +60,6 @@ dependencies {
     implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-client-websockets")
-    implementation("app.softwork:kotlinx-uuid-core:0.1.2")
     implementation("org.boofcv:boofcv-core:1.1.5")
     implementation("org.boofcv:boofcv-kotlin:1.1.5")
     implementation("com.google.zxing:core:3.5.3")
@@ -111,10 +110,6 @@ val shortCommitId = git("rev-parse", "--short", "HEAD")?.let { if (isDirty) "$it
 
 buildConfig {
     packageName("moe.sekiu.minilpa")
-    buildConfigField("IS_PACKAGED",
-        (gradle.startParameter.taskNames.firstOrNull() == "jpackage" || project.switchProperty("is-package"))
-                && project.findProperty("type") != "app-image"
-    )
     buildConfigField("VERSION", "$version")
     buildConfigField("SHORT_COMMIT_ID", project.findProperty("short-commit-id") as String? ?: shortCommitId ?: "internal")
 }
@@ -122,6 +117,9 @@ buildConfig {
 application {
     mainClass.set("moe.sekiu.minilpa.MainKt")
 }
+
+// Running from source keeps settings, logs and the extracted lpac in the (gitignored) project folder
+tasks.named<JavaExec>("run") { systemProperty("minilpa.app-data-folder", projectDir.path) }
 
 tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
     compilerOptions.freeCompilerArgs.addAll(
@@ -134,6 +132,7 @@ tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("java.awt.headless", "true")
 }
 
 kotlin {
@@ -150,7 +149,8 @@ val lpacPlatformToArtifact = mapOf(
     "macos_universal" to LpacArtifact("lpac-darwin-universal", "13115f5a6ce632d7b4799d236de3b99175aa28eb4827b5301b2a9576b83747f1"),
     "windows_x86" to LpacArtifact("lpac-windows-x86_64-mingw", "4781e8673d19c08c41cd104e8bc59f901e352eb10e8c952bcf2aa199a915ea6f"),
     "windows_aarch64" to LpacArtifact("lpac-windows-arm64-mingw", "9b0ef205d60b4fbe459459123e38ff7cb8b29b7091b33a62d267947b10d501ad"),
-    "linux_x86" to LpacArtifact("lpac-linux-x86_64", "a6ff503719f3d57d6af09d6dc9ffc1567ecabfae50693130edc74654b26c64cb")
+    "linux_x86" to LpacArtifact("lpac-linux-x86_64", "a6ff503719f3d57d6af09d6dc9ffc1567ecabfae50693130edc74654b26c64cb"),
+    "linux_aarch64" to LpacArtifact("lpac-linux-aarch64", "9ace028ca3139d37d474743e125e976eda54b5c1de53354c743f80223f1356f5")
 )
 
 val euiccManifests = mapOf(

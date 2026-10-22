@@ -40,7 +40,8 @@ val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
 val json = Json { ignoreUnknownKeys = true }
 
-val appDataFolder = if (BuildConfig.IS_PACKAGED) File(System.getProperty("user.home"), ".minilpa") else File(".")
+// Only `./gradlew run` sets this, so a released build never reads settings or runs lpac from the working directory
+val appDataFolder = System.getProperty("minilpa.app-data-folder")?.let(::File) ?: File(System.getProperty("user.home"), ".minilpa")
 
 val languageFolder = File(appDataFolder, "languages")
 
@@ -146,7 +147,7 @@ fun extractResources()
     Manifest.loadManifests()
     if (BuildConfig.LPAC_BUILD_TIME > setting.`lpac-build-time`)
     {
-        ZipInputStream(bufferedResourceStream("$platform.zip")).unzip(lpacFolder)
+        ZipInputStream(bufferedResourceStream("$platform.zip")).unzip(lpacFolder, setOf("lpac"))
         setting.update { `lpac-build-time` = BuildConfig.LPAC_BUILD_TIME }
     }
 }
@@ -159,7 +160,6 @@ fun setupLogBack() : Logger
     log.info("MiniLPA ${BuildConfig.VERSION}")
     log.info("Runtime Version: ${SystemUtils.JAVA_VM_VERSION} ${SystemUtils.OS_ARCH}")
     log.info("VM: ${SystemUtils.JAVA_VM_NAME}, ${SystemUtils.JAVA_VM_VENDOR}")
-    log.info("IS_PACKAGE -> ${BuildConfig.IS_PACKAGED}")
     log.info("SHORT_COMMIT_ID -> ${BuildConfig.SHORT_COMMIT_ID}")
     log.info("AppDataFolder -> ${appDataFolder.canonicalPath}")
     return log

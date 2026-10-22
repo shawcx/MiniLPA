@@ -7,15 +7,14 @@ import java.awt.Graphics
 import java.awt.RenderingHints
 import java.awt.geom.RoundRectangle2D
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import javax.imageio.ImageIO
 import javax.swing.JPanel
 import kotlin.io.encoding.Base64
+import moe.sekiu.minilpa.decodeProfileIcon
 
 
 class ProfileIcon(base64 : String?) : JPanel()
 {
-    val image : BufferedImage? = base64?.let { makeRoundedCorner(ImageIO.read(ByteArrayInputStream(Base64.decode(base64))), 20) }
+    val image : BufferedImage? = base64?.let { Base64.decode(it).decodeProfileIcon() }?.let { makeRoundedCorner(it, 20) }
     val defaultSVGIcon = FlatSVGIcon("icons/profile.svg", 64, 64)
 
     init

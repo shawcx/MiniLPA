@@ -101,7 +101,7 @@ Other distributions are also viable, but there's no guarantee that they will wor
 
 ```shell
 # Jar (build/libs/MiniLPA-all.jar)
-# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86]    Specify the platforms whose lpac is bundled (default: current platform)
+# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86, linux_aarch64]    Specify the platforms whose lpac is bundled (default: current platform)
 ./gradlew shadowJar
 
 # Binary executable (build/dist/)

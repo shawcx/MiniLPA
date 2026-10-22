@@ -23,7 +23,9 @@ import java.awt.event.ActionListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
 import java.net.URI
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -267,6 +269,27 @@ fun BufferedImage.parseActivationCode() : ActivationCode?
     return results.firstNotNullOfOrNull { ActivationCode.of(it.text) }
 }
 
+// Profile icons come from the SM-DP+ and SGP.22 only allows PNG and JPEG, so no other image reader is handed them
+fun ByteArray.decodeProfileIcon() : BufferedImage?
+{
+    val stream = ImageIO.createImageInputStream(ByteArrayInputStream(this)) ?: return null
+    stream.use {
+        val reader = sequenceOf("png", "jpeg")
+            .flatMap { ImageIO.getImageReadersByFormatName(it).asSequence() }
+            .firstOrNull { it.originatingProvider?.canDecodeInput(stream) == true } ?: return null
+        try
+        {
+            reader.input = stream
+            // A few bytes can declare an enormous image, so refuse anything bigger than an icon needs
+            if (reader.getWidth(0) > 1024 || reader.getHeight(0) > 1024) return null
+            return reader.read(0)
+        } finally
+        {
+            reader.dispose()
+        }
+    }
+}
+
 fun String.openLink()
 {
     if (Desktop.isDesktopSupported())
@@ -311,6 +334,15 @@ fun String.redact() : String = this
     }
     .replace(ACTIVATION_CODE_MATCHING_ID_REGEX) { match -> match.groupValues[1] + "*".repeat(match.groupValues[2].length) }
 
+private val ICCID_REGEX = Regex("[0-9]{18,20}[0-9F]?", RegexOption.IGNORE_CASE)
+
+// The matching ID, confirmation code and IMEI follow these lpac options, and ICCIDs are passed bare
+fun Array<out String>.redactLpacArguments() = mapIndexed { index, argument ->
+    if (getOrNull(index - 1) in listOf("-m", "-c", "-i")) "*".repeat(argument.length)
+    else if (ICCID_REGEX.matches(argument)) argument.mask(8)
+    else argument.redact()
+}.joinToString(" ")
+
 fun getPlatformInfo() : String
 {
     val os = if (SystemUtils.IS_OS_MAC_OSX) "macos"
@@ -331,15 +363,22 @@ inline fun Any.logger() = LoggerFactory.getLogger(this::class.simpleName)
 fun bufferedResourceStream(name : String) = object {}::class.java.getResourceAsStream("/$name")!!.buffered()
 
 
-fun ZipInputStream.unzip(folder : File)
+fun ZipInputStream.unzip(folder : File, executables : Set<String> = emptySet())
 {
     use { `in` ->
         folder.mkdirs()
+        val root = folder.canonicalFile.toPath()
         var entry : ZipEntry? = `in`.nextEntry
         while (entry != null) {
-            val file = File(folder, entry.name)
-            file.outputStream().use { out -> `in`.copyTo(out) }
-            file.setExecutable(true)
+            val file = File(folder, entry.name).canonicalFile
+            if (!file.toPath().startsWith(root)) throw IOException("Zip entry ${entry.name} would be extracted outside $root")
+            if (entry.isDirectory) file.mkdirs()
+            else
+            {
+                file.parentFile.mkdirs()
+                file.outputStream().use { out -> `in`.copyTo(out) }
+                if (file.name in executables) file.setExecutable(true)
+            }
             entry = `in`.nextEntry
         }
     }

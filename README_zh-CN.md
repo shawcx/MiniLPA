@@ -102,7 +102,7 @@ MiniLPA 开发组在这里推荐 Estkme eUICC 卡片, SiP 先进封装工艺更�
 
 ```shell
 # Jar (build/libs/MiniLPA-all.jar)
-# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86] 指定打包 lpac 的平台 (默认为当前平台)
+# -Ptarget=[all, macos_universal, windows_x86, windows_aarch64, linux_x86, linux_aarch64] 指定打包 lpac 的平台 (默认为当前平台)
 ./gradlew shadowJar
 
 # 二进制可执行文件 (build/dist/)

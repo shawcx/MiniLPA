@@ -6,6 +6,7 @@
 /windows_x86/
 /windows_aarch64/
 /linux_x86/
+/linux_aarch64/
 /macos_universal/
 
 .DS_Store
