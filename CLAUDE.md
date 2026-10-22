@@ -37,7 +37,11 @@ Requirements: JDK 21 (Gradle toolchain; Gradle 9 itself needs JDK 17+) and a PC/
   - `./gradlew dependencyUpdates` lists newer versions. It also reports betas and RCs as releases.
 - Windows `.msi` builds get a per-commit ProductCode from `scripts/Update-MSI-ProductCode.ps1`, which Gradle runs through Windows PowerShell. It's the only remaining script.
 - Tests live in `src/test/kotlin`. Keep them away from the globals in `Main.kt`: initializing those sets up logging and writes settings and language files. There's no lint step.
-- CI (`.github/workflows/build.yaml`) runs the tests in the standalone-jar job and builds packages with `./gradlew`: Zulu on Windows/macOS, JetBrains Runtime on Linux. The workflow's token is read-only except in the release job, which runs on `v*` tags and publishes a GitHub release.
+- **CI** (`.github/workflows/build.yaml`):
+  - The standalone-jar job runs the tests.
+  - The other jobs build packages with `./gradlew`: Azul Zulu on Windows and macOS, and the JetBrains Runtime (through `setup-java`) on Linux, for x86_64 and arm64 each.
+  - Actions are pinned to commit SHAs with `# vX.Y.Z` comments, which Dependabot (`.github/dependabot.yml`) keeps current.
+  - The workflow's token is read-only except in the release job, which runs on `v*` tags and publishes a GitHub release.
 
 ## Runtime layout
 

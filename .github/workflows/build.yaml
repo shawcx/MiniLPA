@@ -8,34 +8,44 @@ on:
     branches: [ main ]
 permissions:
   contents: read
+# Actions are pinned to commits; Dependabot (.github/dependabot.yml) keeps the pins and version comments current
 jobs:
   build-with-zulu:
-    name: ${{ matrix.os }}(${{ matrix.type }}) ${{ matrix.arch }} with Auzl Zulu
+    name: ${{ matrix.os }}(${{ matrix.type }}) ${{ matrix.arch }} with Azul Zulu
     runs-on: ${{ matrix.label }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { label: windows-latest, os: Windows, arch: x86_64,  type: msi       }
-          - { label: windows-latest, os: Windows, arch: x86_64,  type: app-image }
-          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: dmg       }
-          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: pkg       }
-          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: app-image }
-          - { label: macos-latest,   os: macOS,   arch: aarch64, type: dmg       }
-          - { label: macos-latest,   os: macOS,   arch: aarch64, type: pkg       }
-          - { label: macos-latest,   os: macOS,   arch: aarch64, type: app-image }
+          - { label: windows-latest,  os: Windows, arch: x86_64,  type: msi       }
+          - { label: windows-latest,  os: Windows, arch: x86_64,  type: app-image }
+          - { label: windows-11-arm,  os: Windows, arch: aarch64, type: msi       }
+          - { label: windows-11-arm,  os: Windows, arch: aarch64, type: app-image }
+          - { label: macos-15-intel,  os: macOS,   arch: x86_64,  type: dmg       }
+          - { label: macos-15-intel,  os: macOS,   arch: x86_64,  type: pkg       }
+          - { label: macos-15-intel,  os: macOS,   arch: x86_64,  type: app-image }
+          - { label: macos-latest,    os: macOS,   arch: aarch64, type: dmg       }
+          - { label: macos-latest,    os: macOS,   arch: aarch64, type: pkg       }
+          - { label: macos-latest,    os: macOS,   arch: aarch64, type: app-image }
     steps:
       - name: Checkout MiniLPA
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: zulu
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      # jpackage on JDK 21 builds .msi files with WiX 3, which not every Windows image includes
+      - name: Install WiX 3
+        if: matrix.type == 'msi'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\WiX Toolset v3*")) { choco install wixtoolset --no-progress -y }
 
       - name: Build Native Executable
         shell: bash
@@ -43,43 +53,46 @@ jobs:
           ./gradlew jpackage -Ptype=${{ matrix.type }} --info --stacktrace
 
       - name: Get Short Commit Id
-        shell: pwsh
+        shell: bash
         run: |
-          "SHORT_COMMIT_ID=$($Env:GITHUB_SHA.Substring(0, 7))" | Out-File -FilePath $Env:GITHUB_ENV -Append
+          echo "SHORT_COMMIT_ID=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: MiniLPA-${{ env.SHORT_COMMIT_ID }}-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.type }}
           path: |
             build/dist/
   build-with-jbr:
-    name: ${{ matrix.os }}(${{ matrix.type }}) ${{ matrix.arch }} ${{ matrix.wayland && 'Wayland' || '' }} with JetBrains Runtime
-    runs-on: ubuntu-latest
+    name: Linux(${{ matrix.type }}) ${{ matrix.arch }} ${{ matrix.wayland && 'Wayland' || '' }} with JetBrains Runtime
+    runs-on: ${{ matrix.label }}
     strategy:
       fail-fast: false
       matrix:
+        arch: [ x86_64, aarch64 ]
         type: [ deb, rpm, app-image ]
         wayland: [ true, false ]
         include:
-          - os: Linux
-          - arch: x86_64
+          - { arch: x86_64,  label: ubuntu-latest }
+          - { arch: aarch64, label: ubuntu-24.04-arm }
     steps:
       - name: Checkout MiniLPA
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Checkout JetBrains Setup
-        uses: actions/checkout@v4
+      # JetBrains Runtime scales correctly on HiDPI Linux and ships the native Wayland toolkit
+      - name: Setup JetBrains Runtime
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          repository: ShiinaSekiu/github-actions-jbr-setup
-          ref: jdk
-          path: .github/shared_actions/jbr
-
-      - name: Install JetBrains Runtime
-        uses: ./.github/shared_actions/jbr/setup_jbr21
+          distribution: jetbrains
+          java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Install rpmbuild
+        if: matrix.type == 'rpm'
+        run: |
+          command -v rpmbuild || { sudo apt-get update && sudo apt-get install -y rpm; }
 
       - name: Build Native Executable
         shell: bash
@@ -87,14 +100,14 @@ jobs:
           ./gradlew jpackage -Ptype=${{ matrix.type }} ${{ matrix.wayland && '-Pnative-wayland' || '' }} --info --stacktrace
 
       - name: Get Short Commit Id
-        shell: pwsh
+        shell: bash
         run: |
-          "SHORT_COMMIT_ID=$($Env:GITHUB_SHA.Substring(0, 7))" | Out-File -FilePath $Env:GITHUB_ENV -Append
+          echo "SHORT_COMMIT_ID=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: MiniLPA-${{ env.SHORT_COMMIT_ID }}-${{ matrix.os }}-${{ matrix.arch }}-${{ matrix.type }}${{ matrix.wayland && '-Wayland' || '' }}
+          name: MiniLPA-${{ env.SHORT_COMMIT_ID }}-Linux-${{ matrix.arch }}-${{ matrix.type }}${{ matrix.wayland && '-Wayland' || '' }}
           path: |
             build/dist/
   build-standalone-jar:
@@ -102,16 +115,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout MiniLPA
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: zulu
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       - name: Test
         shell: bash
@@ -124,12 +137,12 @@ jobs:
           ./gradlew shadowJar -Ptarget=all --info --stacktrace
 
       - name: Get Short Commit Id
-        shell: pwsh
+        shell: bash
         run: |
-          "SHORT_COMMIT_ID=$($Env:GITHUB_SHA.Substring(0, 7))" | Out-File -FilePath $Env:GITHUB_ENV -Append
+          echo "SHORT_COMMIT_ID=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: MiniLPA-${{ env.SHORT_COMMIT_ID }}-standalone-jar
           path: |
@@ -143,7 +156,7 @@ jobs:
       contents: write
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           merge-multiple: true
 
@@ -156,8 +169,7 @@ jobs:
           'EOF' | Out-File -Path $Env:GITHUB_OUTPUT -Append
 
       - name: GitHub Release
-        # Pinned to a commit because this action can write to the repository; v2.6.2
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           generate_release_notes: true
           append_body: true

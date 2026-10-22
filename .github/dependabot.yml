@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Keeps the commit-pinned actions in .github/workflows current, as one grouped pull request a week.
+  # Gradle dependencies are left out: every update also needs gradle/verification-metadata.xml regenerated (see CLAUDE.md).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: [ "*" ]
