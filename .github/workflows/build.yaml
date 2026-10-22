@@ -6,6 +6,8 @@ on:
     tags: [ v* ]
   pull_request:
     branches: [ main ]
+permissions:
+  contents: read
 jobs:
   build-with-zulu:
     name: ${{ matrix.os }}(${{ matrix.type }}) ${{ matrix.arch }} with Auzl Zulu
@@ -16,9 +18,9 @@ jobs:
         include:
           - { label: windows-latest, os: Windows, arch: x86_64,  type: msi       }
           - { label: windows-latest, os: Windows, arch: x86_64,  type: app-image }
-          - { label: macos-13,       os: macOS,   arch: x86_64,  type: dmg       }
-          - { label: macos-13,       os: macOS,   arch: x86_64,  type: pkg       }
-          - { label: macos-13,       os: macOS,   arch: x86_64,  type: app-image }
+          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: dmg       }
+          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: pkg       }
+          - { label: macos-15-intel, os: macOS,   arch: x86_64,  type: app-image }
           - { label: macos-latest,   os: macOS,   arch: aarch64, type: dmg       }
           - { label: macos-latest,   os: macOS,   arch: aarch64, type: pkg       }
           - { label: macos-latest,   os: macOS,   arch: aarch64, type: app-image }
@@ -111,6 +113,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Test
+        shell: bash
+        run: |
+          ./gradlew test --stacktrace
+
       - name: Build Standalone Jar
         shell: bash
         run: |
@@ -130,7 +137,7 @@ jobs:
   release-github:
     name: Release(GitHub)
     runs-on: macos-latest
-    needs: [ build-with-zulu, build-with-jbr ]
+    needs: [ build-with-zulu, build-with-jbr, build-standalone-jar ]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
@@ -149,7 +156,8 @@ jobs:
           'EOF' | Out-File -Path $Env:GITHUB_OUTPUT -Append
 
       - name: GitHub Release
-        uses: softprops/action-gh-release@v2
+        # Pinned to a commit because this action can write to the repository; v2.6.2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           generate_release_notes: true
           append_body: true
