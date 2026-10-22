@@ -260,7 +260,7 @@ tasks.jpackage {
         type = ImageType.values().find { it.value == value } ?: throw IllegalArgumentException("Type $value not found")
     }
 
-    if (project.hasProperty("native-wayland")) javaOptions.add("Dawt.toolkit.name=WLToolkit")
+    if (project.hasProperty("native-wayland")) javaOptions.add("-Dawt.toolkit.name=WLToolkit")
     windows {
         icon = projectDir.toPath().resolve("src/main/icons/window.ico").pathString
         if (type != ImageType.APP_IMAGE)
