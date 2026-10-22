@@ -35,7 +35,6 @@ plugins {
     kotlin("jvm") version "2.4.21"
     kotlin("plugin.serialization") version "2.4.21"
     id("com.gradleup.shadow") version "9.6.1"
-    id("io.ktor.plugin") version "3.6.0"
     id("org.panteleyev.jpackageplugin") version "2.1.0"
     id("com.github.gmazzo.buildconfig") version "6.1.2"
     id("io.github.ben-manes.versions") version "0.66.0"
@@ -58,9 +57,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.11.0")
-    implementation("io.ktor:ktor-client-core")
-    implementation("io.ktor:ktor-client-cio")
-    implementation("io.ktor:ktor-client-websockets")
     implementation("org.boofcv:boofcv-core:1.5.0")
     implementation("org.boofcv:boofcv-kotlin:1.5.0")
     implementation("com.google.zxing:core:3.5.4")
@@ -132,8 +128,7 @@ tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
     compilerOptions.freeCompilerArgs.addAll(
         "-opt-in=kotlin.io.encoding.ExperimentalEncodingApi",
         "-opt-in=kotlinx.coroutines.DelicateCoroutinesApi",
-        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
-        "-opt-in=kotlin.uuid.ExperimentalUuidApi"
+        "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
     )
 }
 
@@ -174,7 +169,8 @@ val jpackageOutputPath = buildPath.resolve("jpackage-output")
 val appImagePath = jpackageOutputPath.resolve(if (SystemUtils.IS_OS_MAC_OSX) "${project.name}.app" else project.name)
 val resourcesPath = projectDir.toPath().resolve("src/main/resources")
 val eUICCInfoUpdateTimePath = buildPath.resolve("euicc_info_update_time")
-val archiveFileName = tasks.shadowJar.get().archiveFileName.get()
+// CI uploads and the docs refer to the fat jar by this name
+val shadowJarName = "${project.name}-all.jar"
 val target = project.findProperty("target")?.toString()?.lowercase() ?: getPlatformInfo()
 val packageType = project.findProperty("type")?.toString()
 
@@ -241,8 +237,8 @@ tasks.register("setupjpackage")
     doLast {
         Files.createDirectories(jpackagePath)
         Files.copy(
-            buildPath.resolve("libs/${archiveFileName}"),
-            jpackagePath.resolve(archiveFileName),
+            buildPath.resolve("libs/$shadowJarName"),
+            jpackagePath.resolve(shadowJarName),
             StandardCopyOption.REPLACE_EXISTING,
             StandardCopyOption.COPY_ATTRIBUTES
         )
@@ -264,6 +260,7 @@ tasks.processResources {
 }
 
 tasks.shadowJar {
+    archiveFileName = shadowJarName
     // java -jar honours this manifest attribute the way other launchers honour --add-opens
     manifest { attributes("Add-Opens" to openJavaAwt) }
     // Shadow merges these with a transformer, so let duplicates reach it rather than dropping them first
@@ -273,7 +270,6 @@ tasks.shadowJar {
         exclude(dependency("net.java.dev.jna:jna:.*"))
         exclude(dependency("com.formdev:flatlaf-intellij-themes:.*"))
         exclude(dependency("com.twelvemonkeys.imageio:.*:.*"))
-        exclude(dependency("io.ktor:ktor-client-cio:.*"))
         exclude(dependency("com.github.jai-imageio:jai-imageio-core:.*"))
     }
 }
@@ -286,7 +282,7 @@ tasks.jpackage {
     appName = project.name
     appVersion = "$version"
     vendor = "esim.moe"
-    mainJar = archiveFileName
+    mainJar = shadowJarName
     mainClass = application.mainClass
     javaOptions = listOf("-Dfile.encoding=UTF-8", "--add-opens=$openJavaAwt=ALL-UNNAMED")
     addModules = listOf("java.base", "java.desktop", "java.naming", "jdk.unsupported")

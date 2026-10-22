@@ -1,10 +1,8 @@
 package moe.sekiu.minilpa.model
 
 import com.charleskorn.kaml.encodeToStream
-import com.formdev.flatlaf.extras.FlatSVGIcon
 import com.formdev.flatlaf.themes.FlatMacDarkLaf
 import com.formdev.flatlaf.themes.FlatMacLightLaf
-import java.awt.event.ActionEvent
 import java.io.File
 import java.util.*
 import kotlinx.serialization.KSerializer
@@ -17,8 +15,6 @@ import kotlinx.serialization.encoding.Encoder
 import moe.sekiu.minilpa.appDataFolder
 import moe.sekiu.minilpa.drop
 import moe.sekiu.minilpa.language
-import moe.sekiu.minilpa.lpa.LocalProfileAssistant
-import moe.sekiu.minilpa.ui.component.MiniToolBar
 import moe.sekiu.minilpa.yaml
 
 @Serializable
@@ -51,49 +47,6 @@ data class Setting(
     {
         SYSTEM { override fun toString() = language.system },
         DISABLED { override fun toString() = language.disabled }
-    }
-
-    var backend : Backend = Backend.LPACExecutor
-        set(value)
-        {
-            value.updateOperationButtonAppearances()
-            field = value
-        }
-
-    @Serializable
-    enum class Backend()
-    {
-        @SerialName("lpac_executor")
-        LPACExecutor
-        {
-            override fun onOperationButtonAction(event : ActionEvent) = LocalProfileAssistant.refreshDeviceData()
-            override fun updateOperationButtonAppearances()
-            {
-                for (button in MiniToolBar.devicesOperations) with(button)
-                {
-                    icon =
-                        FlatSVGIcon("icons/refresh.svg", MiniToolBar.referenceSize - 4, MiniToolBar.referenceSize - 4)
-                    toolTipText = language.`refresh-devices`
-                }
-            }
-        },
-
-        @SerialName("remote_lpa")
-        RemoteLPA
-        {
-            override fun onOperationButtonAction(event : ActionEvent)
-            {
-
-            }
-
-            override fun updateOperationButtonAppearances()
-            {
-
-            }
-        };
-
-        abstract fun onOperationButtonAction(event : ActionEvent)
-        abstract fun updateOperationButtonAppearances()
     }
 
     @Serializable

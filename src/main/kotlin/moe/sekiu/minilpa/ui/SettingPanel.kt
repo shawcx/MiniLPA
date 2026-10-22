@@ -9,7 +9,6 @@ import com.jthemedetecor.OsThemeDetector
 import java.awt.Color
 import java.io.File
 import java.util.*
-import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
@@ -161,41 +160,9 @@ class SettingPanel : MiniPanel()
                     super.setVisible(visable)
                 }
             }
-            val remoteLPAPanel = object : MiniPanel()
-            {
-                init
-                {
-                    layout = MigLayout("wrap 1")
-                    add(JLabel("Not yet realized"))
-                }
-            }
-            val dataModel = object : DefaultComboBoxModel<Setting.Backend>(Setting.Backend.entries.toTypedArray())
-            {
-                override fun setSelectedItem(selected : Any?)
-                {
-                    super.setSelectedItem(selected)
-                    if (selected is Setting.Backend)
-                    {
-                        setting.update { backend = selected }
-                        when(selected)
-                        {
-                            Setting.Backend.LPACExecutor -> {
-                                lpacPanel.isVisible = true
-                                remoteLPAPanel.isVisible = false
-                            }
-                            Setting.Backend.RemoteLPA -> {
-                                lpacPanel.isVisible = false
-                                remoteLPAPanel.isVisible = true
-                            }
-                        }
-                    }
-                }
-            }
-            dataModel.selectedItem = setting.backend
-            val backendSelector = JComboBox(dataModel).noFocus()
-            add(MiniGroup(JLabel("${language.backend}:"), backendSelector))
-            add(lpacPanel, "hidemode 3")
-            add(remoteLPAPanel, "hidemode 3")
+            // Showing the panel looks up the lpac version
+            lpacPanel.isVisible = true
+            add(lpacPanel)
         }
     }
 

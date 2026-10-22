@@ -12,7 +12,6 @@ import javax.swing.JToggleButton
 import moe.sekiu.minilpa.action
 import moe.sekiu.minilpa.addConstructedHook
 import moe.sekiu.minilpa.language
-import moe.sekiu.minilpa.setting
 import moe.sekiu.minilpa.ui.Actions
 import moe.sekiu.minilpa.lpa.LocalProfileAssistant
 
@@ -60,10 +59,7 @@ class ProfileToolBar : MiniToolBar()
         }
         val deviceSelector = createDeviceSelector()
         val refreshDevices = createDevicesOperation()
-        addConstructedHook {
-            refreshDevices.doClick()
-            setting.backend.updateOperationButtonAppearances()
-        }
+        addConstructedHook { refreshDevices.doClick() }
         val refreshCard = createRefreshCard()
         val toNotification = JButton(FlatSVGIcon("icons/notification.svg", referenceSize - 4, referenceSize - 4)).setup()
         toNotification.toolTipText = language.`to-notification`

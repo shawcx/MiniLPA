@@ -12,7 +12,6 @@ import com.google.zxing.NotFoundException
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.multi.qrcode.QRCodeMultiReader
-import io.ktor.websocket.*
 import java.awt.Component
 import java.awt.Container
 import java.awt.Desktop
@@ -45,9 +44,6 @@ import javax.swing.UIManager
 import javax.swing.border.EmptyBorder
 import javax.swing.plaf.basic.BasicOptionPaneUI
 import kotlin.reflect.KProperty1
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import moe.sekiu.minilpa.model.ActivationCode
@@ -62,10 +58,6 @@ inline fun <reified T> Any?.cast() = this as T
 inline fun <reified T> Any?.castOrNull() = this as? T?
 
 inline fun <reified T> decode(element : JsonElement) : T = json.decodeFromJsonElement(element)
-
-suspend inline fun <reified T> SendChannel<Frame>.send(value : T) = send(Frame.Text(json.encodeToString(value)))
-
-suspend inline fun <reified T> ReceiveChannel<Frame>.receive() = receive().castOrNull<Frame.Text>()?.readText()?.let { json.decodeFromString<T>(it) }
 
 inline fun Any?.drop() = Unit
 

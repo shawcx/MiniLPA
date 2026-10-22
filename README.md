@@ -114,7 +114,6 @@ Other distributions are also viable, but there's no guarantee that they will wor
 ```
 
 ## Todo List
-- [ ] MiniRemoteLPA
 - [ ] Camera scanning
 
 ## Feedback

@@ -10,8 +10,3 @@ data class Driver(val env : String, val name : String, @Transient val envName : 
 {
     override fun toString() : String = name
 }
-
-data class RemoteCard(val host : String, val port : Int) : Device
-{
-    override fun toString() : String = "$host:$port"
-}
