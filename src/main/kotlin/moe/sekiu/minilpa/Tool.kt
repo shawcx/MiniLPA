@@ -293,6 +293,24 @@ fun File.openExplorer()
 
 fun String.mask(start : Int) = replaceRange(start, length, "*".repeat(length - start))
 
+private val SENSITIVE_JSON_VALUE_REGEX = Regex("\"(eid|eidValue|iccid|imei|matchingId)\"\\s*:\\s*\"([^\"]*)\"", RegexOption.IGNORE_CASE)
+
+private val ACTIVATION_CODE_MATCHING_ID_REGEX = Regex("(LPA:1\\\$[^\$\\s]*\\\$)([^\$\\s\"]+)", RegexOption.IGNORE_CASE)
+
+// Logs get attached to public issues, so card identifiers are masked like the UI masks them and download secrets are hidden
+fun String.redact() : String = this
+    .replace(SENSITIVE_JSON_VALUE_REGEX) { match ->
+        val (key, value) = match.destructured
+        val masked = when (key.lowercase())
+        {
+            "eid", "eidvalue" -> value.mask(minOf(12, value.length))
+            "iccid" -> value.mask(minOf(8, value.length))
+            else -> "*".repeat(value.length)
+        }
+        "\"$key\":\"$masked\""
+    }
+    .replace(ACTIVATION_CODE_MATCHING_ID_REGEX) { match -> match.groupValues[1] + "*".repeat(match.groupValues[2].length) }
+
 fun getPlatformInfo() : String
 {
     val os = if (SystemUtils.IS_OS_MAC_OSX) "macos"

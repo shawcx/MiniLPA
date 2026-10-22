@@ -18,6 +18,7 @@ import moe.sekiu.minilpa.cast
 import moe.sekiu.minilpa.logger
 import moe.sekiu.minilpa.model.ActivationCode
 import moe.sekiu.minilpa.parseActivationCode
+import moe.sekiu.minilpa.redact
 
 class MiniPasteArea(val triggerArea : JComponent, val block : (ActivationCode) -> Unit) : AbstractAction()
 {
@@ -48,7 +49,7 @@ class MiniPasteArea(val triggerArea : JComponent, val block : (ActivationCode) -
                     triggerArea.text = text
                     return
                 }
-                log.info("Text paste -> $text")
+                log.info("Text paste -> ${text.redact()}")
             }
             if (activationCode == null && clipboard.isDataFlavorAvailable(DataFlavor.imageFlavor))
             {

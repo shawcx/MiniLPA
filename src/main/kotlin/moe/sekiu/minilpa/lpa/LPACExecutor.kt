@@ -13,6 +13,7 @@ import moe.sekiu.minilpa.json
 import moe.sekiu.minilpa.language
 import moe.sekiu.minilpa.logger
 import moe.sekiu.minilpa.mainFrame
+import moe.sekiu.minilpa.mask
 import moe.sekiu.minilpa.model.ChipInfo
 import moe.sekiu.minilpa.model.DownloadInfo
 import moe.sekiu.minilpa.model.Driver
@@ -20,12 +21,22 @@ import moe.sekiu.minilpa.model.LPACIO
 import moe.sekiu.minilpa.model.Notification
 import moe.sekiu.minilpa.model.Profile
 import moe.sekiu.minilpa.platform
+import moe.sekiu.minilpa.redact
 import moe.sekiu.minilpa.setting
 import org.apache.commons.lang3.SystemUtils
 
 class LPACExecutor() : LPABackend<Driver>
 {
     private val log = logger()
+
+    private val iccidRegex = Regex("[0-9]{18,20}[0-9F]?", RegexOption.IGNORE_CASE)
+
+    // The matching ID, confirmation code and IMEI follow these options, and ICCIDs are passed bare
+    private fun Array<out String>.redactArguments() = mapIndexed { index, argument ->
+        if (getOrNull(index - 1) in listOf("-m", "-c", "-i")) "*".repeat(argument.length)
+        else if (iccidRegex.matches(argument)) argument.mask(8)
+        else argument.redact()
+    }.joinToString(" ")
 
     suspend fun getDeviceList() : List<Driver>
     {
@@ -75,7 +86,7 @@ class LPACExecutor() : LPABackend<Driver>
 
     suspend fun execute(vararg commands : String) : LPACIO.Payload.DataPayload
     {
-        log.info("lpac command input -> ${commands.joinToString(" ")}")
+        log.info("lpac command input -> ${commands.redactArguments()}")
         val lpacFile = File(File(appDataFolder, platform), if (SystemUtils.IS_OS_WINDOWS) "lpac.exe" else "lpac")
         if (!lpacFile.exists() || lpacFile.isDirectory) throw OperationFailureException(language.`lpac-not-found-or-invalid`.format(lpacFile.canonicalPath))
         var initialze = true
@@ -89,7 +100,7 @@ class LPACExecutor() : LPABackend<Driver>
             env = env,
             stdout = Redirect.Capture {
                 if (it.isBlank()) return@Capture
-                log.info("lpac stdout output -> $it")
+                log.info("lpac stdout output -> ${it.redact()}")
                 val lpacio = json.decodeFromString<LPACIO>(it)
                 when (lpacio.type)
                 {
@@ -118,7 +129,7 @@ class LPACExecutor() : LPABackend<Driver>
             },
             stderr = Redirect.Capture {
                 if (it.isBlank()) return@Capture
-                log.info("lpac stderr output -> $it")
+                log.info("lpac stderr output -> ${it.redact()}")
             }
         )
         val payload = lpacout?.payload ?: throw OperationFailureException(language.`lpac-output-not-captured`)

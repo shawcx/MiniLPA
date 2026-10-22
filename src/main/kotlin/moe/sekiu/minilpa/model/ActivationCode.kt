@@ -7,6 +7,9 @@ data class ActivationCode(
     val ReqConCode : Boolean
 )
 {
+    // The matching ID is what downloads the profile, so it stays out of logs
+    override fun toString() = "ActivationCode(SMDP=$SMDP, MatchingID=${"*".repeat(MatchingID.length)}, OID=$OID, ReqConCode=$ReqConCode)"
+
     companion object
     {
         private val ACTIVATION_CODE_REGEX = Regex("LPA:1\\\$(?<SMDP>[^\$]*)\\\$(?<MatchingID>[^\$]*)(?:\\\$(?<OID>[^\$]*))?(?:\\\$(?<ReqConCode>1))?")

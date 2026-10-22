@@ -41,6 +41,7 @@ import moe.sekiu.minilpa.logger
 import moe.sekiu.minilpa.mainFrame
 import moe.sekiu.minilpa.model.ActivationCode
 import moe.sekiu.minilpa.parseActivationCode
+import moe.sekiu.minilpa.redact
 import net.miginfocom.swing.MigLayout
 import org.apache.commons.lang3.SystemUtils
 
@@ -160,7 +161,7 @@ class MiniDropArea : JDialog
                         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor))
                         {
                             val text = transferable.getTransferData(DataFlavor.stringFlavor).cast<String>().trim()
-                            log.info("Text drop -> $text")
+                            log.info("Text drop -> ${text.redact()}")
                             activationCode = ActivationCode.of(text)
                         }
                         if (activationCode == null && transferable.isDataFlavorSupported(DataFlavor.imageFlavor))
