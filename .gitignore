@@ -6,7 +6,7 @@
 /windows_x86/
 /windows_aarch64/
 /linux_x86/
-/macos_univeral/
+/macos_universal/
 
 .DS_Store
 .gradle
