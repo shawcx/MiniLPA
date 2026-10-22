@@ -51,7 +51,7 @@ sealed class Manifest<T : Any>
             val response = client.request(updateURL)
             if (response.status.isSuccess())
             {
-                File(path).outputStream().buffered().use { out ->
+                File(appDataFolder, path).outputStream().buffered().use { out ->
                     response.body<InputStream>().copyTo(out)
                 }
             }
