@@ -119,8 +119,14 @@ application {
     mainClass.set("moe.sekiu.minilpa.MainKt")
 }
 
-// Running from source keeps settings, logs and the extracted lpac in the (gitignored) project folder
-tasks.named<JavaExec>("run") { systemProperty("minilpa.app-data-folder", projectDir.path) }
+// AwtInternals in MiniDropArea.kt needs java.awt opened to the app, so every way of launching it passes this
+val openJavaAwt = "java.desktop/java.awt"
+
+tasks.named<JavaExec>("run") {
+    // Running from source keeps settings, logs and the extracted lpac in the (gitignored) project folder
+    systemProperty("minilpa.app-data-folder", projectDir.path)
+    jvmArgs("--add-opens=$openJavaAwt=ALL-UNNAMED")
+}
 
 tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
     compilerOptions.freeCompilerArgs.addAll(
@@ -134,6 +140,7 @@ tasks.named<KotlinCompilationTask<*>>("compileKotlin").configure {
 tasks.test {
     useJUnitPlatform()
     systemProperty("java.awt.headless", "true")
+    jvmArgs("--add-opens=$openJavaAwt=ALL-UNNAMED")
 }
 
 kotlin {
@@ -257,6 +264,8 @@ tasks.processResources {
 }
 
 tasks.shadowJar {
+    // java -jar honours this manifest attribute the way other launchers honour --add-opens
+    manifest { attributes("Add-Opens" to openJavaAwt) }
     // Shadow merges these with a transformer, so let duplicates reach it rather than dropping them first
     filesMatching("META-INF/*.kotlin_module") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     minimize {
@@ -279,7 +288,7 @@ tasks.jpackage {
     vendor = "esim.moe"
     mainJar = archiveFileName
     mainClass = application.mainClass
-    javaOptions = listOf("-Dfile.encoding=UTF-8")
+    javaOptions = listOf("-Dfile.encoding=UTF-8", "--add-opens=$openJavaAwt=ALL-UNNAMED")
     addModules = listOf("java.base", "java.desktop", "java.naming", "jdk.unsupported")
 
     if (packageType != null)

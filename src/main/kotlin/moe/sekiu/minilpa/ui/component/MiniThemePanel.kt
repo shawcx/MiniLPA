@@ -12,7 +12,6 @@ import com.formdev.flatlaf.ui.FlatListUI
 import com.jthemedetecor.OsThemeDetector
 import java.awt.Component
 import java.awt.Graphics
-import java.lang.invoke.MethodType
 import javax.swing.AbstractListModel
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JComponent
@@ -27,7 +26,6 @@ import kotlin.reflect.KMutableProperty1
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import moe.sekiu.minilpa.CatMagic
 import moe.sekiu.minilpa.cast
 import moe.sekiu.minilpa.language
 import moe.sekiu.minilpa.model.Setting
@@ -60,9 +58,11 @@ class MiniThemePanel(val themeProp : KMutableProperty1<Setting, String>) : JList
                 .map { Class.forName(it.className).getConstructor().newInstance().cast<FlatLaf>() })
             // TODO developer mode
             categories[themes.size] = language.`native-themes`
-            UIManager.getInstalledLookAndFeels().map {
-                CatMagic.lookup.findConstructor(Class.forName(it.className),
-                    MethodType.methodType(Void.TYPE)).invoke().cast<BasicLookAndFeel>() }.forEach { themes.add(it) }
+            // createLookAndFeel can build the JDK's own look and feels, whose classes aren't exported, and refuses
+            // ones this platform doesn't support
+            UIManager.getInstalledLookAndFeels()
+                .mapNotNull { runCatching { UIManager.createLookAndFeel(it.name).cast<BasicLookAndFeel>() }.getOrNull() }
+                .forEach { themes.add(it) }
         }
     }
 

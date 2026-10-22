@@ -1,6 +1,7 @@
 package moe.sekiu.minilpa.ui.component
 
 import com.formdev.flatlaf.FlatClientProperties
+import java.awt.AWTEvent
 import java.awt.Component
 import java.awt.Dialog
 import java.awt.Dimension
@@ -20,6 +21,8 @@ import java.awt.event.FocusListener
 import java.awt.geom.RoundRectangle2D
 import java.awt.im.InputContext
 import java.io.File
+import java.lang.invoke.MethodHandle
+import java.lang.invoke.MethodHandles
 import javax.imageio.ImageIO
 import javax.swing.JDialog
 import javax.swing.JLabel
@@ -32,7 +35,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
-import moe.sekiu.minilpa.CatMagic
 import moe.sekiu.minilpa.buffered
 import moe.sekiu.minilpa.cast
 import moe.sekiu.minilpa.drop
@@ -104,9 +106,8 @@ class MiniDropArea : JDialog
             {
                 addFocusListener(object : FocusListener
                 {
-                    val setter = CatMagic.lookup.findSetter(FocusEvent::class.java, "consumed", Boolean::class.javaPrimitiveType)
-                    override fun focusGained(event : FocusEvent) = setter.invoke(event, true).drop()
-                    override fun focusLost(event : FocusEvent) = setter.invoke(event, false).drop()
+                    override fun focusGained(event : FocusEvent) = AwtInternals.consumed.invoke(event, true).drop()
+                    override fun focusLost(event : FocusEvent) = AwtInternals.consumed.invoke(event, false).drop()
                 })
             }
         }
@@ -238,15 +239,22 @@ class MiniDropArea : JDialog
 
     fun disposeWithWork(work : () -> Unit = {})
     {
-        if (SystemUtils.IS_OS_WINDOWS)
-        {
-            val focusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager()
-            CatMagic.lookup.findStaticSetter(focusManager::class.java, "focusOwner", Component::class.java).invoke(null)
-        }
+        if (SystemUtils.IS_OS_WINDOWS) AwtInternals.focusOwner.invoke(null)
         GlobalScope.launch(Dispatchers.Swing) {
             delay(20)
             super.dispose()
             work()
         }
     }
+}
+
+// The Windows focus workarounds above write two non-public java.awt fields. Every launcher opens java.awt to the app
+// (--add-opens java.desktop/java.awt=ALL-UNNAMED, or Add-Opens in the jar manifest) so these lookups are allowed
+internal object AwtInternals
+{
+    val consumed : MethodHandle = MethodHandles.privateLookupIn(AWTEvent::class.java, MethodHandles.lookup())
+        .findSetter(AWTEvent::class.java, "consumed", Boolean::class.javaPrimitiveType)
+
+    val focusOwner : MethodHandle = MethodHandles.privateLookupIn(KeyboardFocusManager::class.java, MethodHandles.lookup())
+        .findStaticSetter(KeyboardFocusManager::class.java, "focusOwner", Component::class.java)
 }
