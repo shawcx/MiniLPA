@@ -27,7 +27,12 @@ class LPACExecutor() : LPABackend<Driver>
 {
     private val log = logger()
 
-    suspend fun getDeviceList() : List<Driver> = decode(execute("driver", "apdu", "list").data)
+    suspend fun getDeviceList() : List<Driver>
+    {
+        // lpac names the environment variable that selects a reader alongside the readers
+        val payload = execute("driver", "apdu", "list").driver
+        return decode<List<Driver>>(payload.data).map { it.copy(envName = payload.env) }
+    }
 
     override suspend fun getChipInfo() : ChipInfo = decode(execute("chip", "info").data)
 
@@ -77,7 +82,7 @@ class LPACExecutor() : LPABackend<Driver>
         val env = mutableMapOf<String, String>()
         if (setting.debug.libeuicc.apdu) env["LIBEUICC_DEBUG_APDU"] = "true"
         if (setting.debug.libeuicc.http) env["LIBEUICC_DEBUG_HTTP"] = "true"
-        LocalProfileAssistant.devices.selectedItem?.run { env["DRIVER_IFID"] = cast<Driver>().env }
+        LocalProfileAssistant.devices.selectedItem?.cast<Driver>()?.let { env[it.envName] = it.env }
         var lpacout : LPACIO? = null
         process(
             *(arrayOf(lpacFile.canonicalPath) + commands),
