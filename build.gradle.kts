@@ -1,4 +1,5 @@
 
+import com.github.gmazzo.buildconfig.BuildConfigTask
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -31,13 +32,13 @@ import org.panteleyev.jpackage.ImageType
 
 plugins {
     application
-    kotlin("jvm") version "2.0.20"
-    kotlin("plugin.serialization") version "2.0.20"
-    id("com.gradleup.shadow") version "8.3.0"
-    id("io.ktor.plugin") version "3.0.0-beta-2"
-    id("org.panteleyev.jpackageplugin") version "1.6.0"
-    id("com.github.gmazzo.buildconfig") version "5.4.0"
-    id("com.github.ben-manes.versions") version "0.51.0"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.serialization") version "2.4.21"
+    id("com.gradleup.shadow") version "9.6.1"
+    id("io.ktor.plugin") version "3.6.0"
+    id("org.panteleyev.jpackageplugin") version "2.1.0"
+    id("com.github.gmazzo.buildconfig") version "6.1.2"
+    id("io.github.ben-manes.versions") version "0.66.0"
 }
 
 group = "moe.sekiu"
@@ -49,46 +50,46 @@ repositories {
 }
 
 dependencies {
-    implementation("com.formdev:flatlaf:3.5.1")
-    implementation("com.formdev:flatlaf-extras:3.5.1")
-    implementation("com.formdev:flatlaf-intellij-themes:3.5.1")
-    implementation("com.miglayout:miglayout-swing:11.4.2")
-    implementation("com.charleskorn.kaml:kaml:0.61.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC.2")
+    implementation("com.formdev:flatlaf:3.7.2")
+    implementation("com.formdev:flatlaf-extras:3.7.2")
+    implementation("com.formdev:flatlaf-intellij-themes:3.7.2")
+    implementation("com.miglayout:miglayout-swing:11.5.2")
+    implementation("com.charleskorn.kaml:kaml:0.104.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.11.0")
     implementation("io.ktor:ktor-client-core")
     implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-client-websockets")
-    implementation("org.boofcv:boofcv-core:1.1.5")
-    implementation("org.boofcv:boofcv-kotlin:1.1.5")
-    implementation("com.google.zxing:core:3.5.3")
-    implementation("com.google.zxing:javase:3.5.3")
-    implementation("org.apache.commons:commons-lang3:3.17.0")
-    implementation("org.slf4j:slf4j-api:2.1.0-alpha1")
-    implementation("ch.qos.logback:logback-classic:1.5.7")
+    implementation("org.boofcv:boofcv-core:1.5.0")
+    implementation("org.boofcv:boofcv-kotlin:1.5.0")
+    implementation("com.google.zxing:core:3.5.4")
+    implementation("com.google.zxing:javase:3.5.4")
+    implementation("org.apache.commons:commons-lang3:3.21.0")
+    implementation("org.slf4j:slf4j-api:2.0.20")
+    implementation("ch.qos.logback:logback-classic:1.6.5")
     implementation("com.github.Dansoftowner:jSystemThemeDetector:3.9.1")
-    implementation("org.apache.xmlgraphics:batik-all:1.17")
-    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-tiff:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-bmp:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-batik:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-psd:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-icns:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-webp:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-pnm:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-iff:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-tga:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-sgi:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-pict:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-hdr:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-pcx:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-pdf:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-clippath:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-xwd:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-tiff-jdk-interop:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-tiff-jai-interop:3.11.0")
-    implementation("com.twelvemonkeys.imageio:imageio-jpeg-jep262-interop:3.11.0")
+    implementation("org.apache.xmlgraphics:batik-all:1.20")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-tiff:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-bmp:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-batik:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-psd:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-icns:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-pnm:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-iff:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-tga:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-sgi:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-pict:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-hdr:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-pcx:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-pdf:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-clippath:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-xwd:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-tiff-jdk-interop:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-tiff-jai-interop:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg-jep262-interop:3.15.3")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 
@@ -98,9 +99,9 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.apache.commons:commons-lang3:3.17.0")
-        classpath("io.ktor:ktor-client-core:3.0.0-beta-2")
-        classpath("io.ktor:ktor-client-cio:3.0.0-beta-2")
+        classpath("org.apache.commons:commons-lang3:3.21.0")
+        classpath("io.ktor:ktor-client-core:3.6.0")
+        classpath("io.ktor:ktor-client-cio:3.6.0")
     }
 }
 
@@ -161,7 +162,9 @@ val euiccManifests = mapOf(
 val buildPath = layout.buildDirectory.asFile.get().toPath()
 val jpackagePath = buildPath.resolve("jpackage")
 val distPath = buildPath.resolve("dist")
-val appImagePath = distPath.resolve(if (SystemUtils.IS_OS_MAC_OSX) "${project.name}.app" else project.name)
+// jpackage empties its destination on every run, so it writes here and finished packages are moved to distPath
+val jpackageOutputPath = buildPath.resolve("jpackage-output")
+val appImagePath = jpackageOutputPath.resolve(if (SystemUtils.IS_OS_MAC_OSX) "${project.name}.app" else project.name)
 val resourcesPath = projectDir.toPath().resolve("src/main/resources")
 val eUICCInfoUpdateTimePath = buildPath.resolve("euicc_info_update_time")
 val archiveFileName = tasks.shadowJar.get().archiveFileName.get()
@@ -181,13 +184,13 @@ val distName by lazy {
     if (project.hasProperty("native-wayland")) "${project.name}-$os-$arch-Wayland" else "${project.name}-$os-$arch"
 }
 
-tasks.generateBuildConfig { dependsOn("setupResources") }
+tasks.withType<BuildConfigTask>().configureEach { dependsOn("setupResources") }
 
-task("setupResources")
+tasks.register("setupResources")
 {
     group = "Package"
+    val skip = project.switchProperty("skip-setup-resources")
     doLast {
-        val skip = project.switchProperty("skip-setup-resources")
         val languagePackPath = buildPath.resolve("languages.zip")
 
         if (!skip)
@@ -218,13 +221,13 @@ task("setupResources")
     }
 }
 
-task("updateEuiccInfo")
+tasks.register("updateEuiccInfo")
 {
     group = "Package"
     doLast { runBlocking { downloadEuiccInfo() } }
 }
 
-task("setupjpackage")
+tasks.register("setupjpackage")
 {
     group = "Package"
     dependsOn("shadowJar")
@@ -254,6 +257,8 @@ tasks.processResources {
 }
 
 tasks.shadowJar {
+    // Shadow merges these with a transformer, so let duplicates reach it rather than dropping them first
+    filesMatching("META-INF/*.kotlin_module") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     minimize {
         exclude(dependency("ch.qos.logback:logback-classic:.*"))
         exclude(dependency("net.java.dev.jna:jna:.*"))
@@ -267,25 +272,25 @@ tasks.shadowJar {
 tasks.jpackage {
     group = "Package"
     dependsOn("setupjpackage")
-    input = jpackagePath.pathString
-    destination = distPath.pathString
+    input = jpackagePath.toFile()
+    destination = jpackageOutputPath.toFile()
     appName = project.name
+    appVersion = "$version"
     vendor = "esim.moe"
     mainJar = archiveFileName
-    mainClass = application.mainClass.get()
-    javaOptions = mutableListOf("-Dfile.encoding=UTF-8")
+    mainClass = application.mainClass
+    javaOptions = listOf("-Dfile.encoding=UTF-8")
     addModules = listOf("java.base", "java.desktop", "java.naming", "jdk.unsupported")
 
-    if (project.hasProperty("type"))
+    if (packageType != null)
     {
-        val value = "${project.property("type")}"
-        type = ImageType.values().find { it.value == value } ?: throw IllegalArgumentException("Type $value not found")
+        type = ImageType.entries.find { it.value == packageType } ?: throw IllegalArgumentException("Type $packageType not found")
     }
 
     if (project.hasProperty("native-wayland")) javaOptions.add("-Dawt.toolkit.name=WLToolkit")
     windows {
-        icon = projectDir.toPath().resolve("src/main/icons/window.ico").pathString
-        if (type != ImageType.APP_IMAGE)
+        icon = file("src/main/icons/window.ico")
+        if (packageType != "app-image")
         {
             winDirChooser = true
             winMenu = true
@@ -296,8 +301,8 @@ tasks.jpackage {
     }
 
     linux {
-        icon = projectDir.toPath().resolve("src/main/icons/window.png").pathString
-        if (type != ImageType.APP_IMAGE)
+        icon = file("src/main/icons/window.png")
+        if (packageType != "app-image")
         {
             linuxShortcut = true
             linuxMenuGroup = "MiniLPA"
@@ -306,8 +311,8 @@ tasks.jpackage {
     }
 
     mac {
-        icon = projectDir.toPath().resolve("src/main/icons/window.icns").pathString
-        if (type != ImageType.APP_IMAGE)
+        icon = file("src/main/icons/window.icns")
+        if (packageType != "app-image")
         {
             macPackageIdentifier = "moe.sekiu.MiniLPA"
             macAppCategory = "MiniLPA"
@@ -318,14 +323,28 @@ tasks.jpackage {
     else doLast { renameDistFiles() }
 }
 
-task<Zip>("zipAppImage")
+// A macOS app-image is a signed .app bundle with symlinks inside, which Gradle's Zip would replace with copies and so
+// break the signature; ditto keeps them and puts the bundle itself at the archive root. --norsrc leaves out extended
+// attributes, which plain unzip would otherwise extract as stray ._ files that also break the signature
+if (SystemUtils.IS_OS_MAC_OSX) tasks.register("zipAppImage")
+{
+    dependsOn("jpackage")
+    doLast {
+        val zipPath = distPath.resolve("$distName.zip")
+        Files.createDirectories(distPath)
+        Files.deleteIfExists(zipPath)
+        providers.exec { commandLine("ditto", "-c", "-k", "--norsrc", "--keepParent", appImagePath.pathString, zipPath.pathString) }.result.get()
+        appImagePath.toFile().deleteRecursively()
+    }
+}
+else tasks.register<Zip>("zipAppImage")
 {
     dependsOn("jpackage")
     destinationDirectory = distPath.toFile()
     archiveFileName = provider { "$distName.zip" }
-    // A macOS app-image is a .app bundle, so the bundle itself is the archive root; elsewhere it's the folder's contents
-    if (SystemUtils.IS_OS_MAC_OSX) from(distPath) { include("${appImagePath.name}/**") }
-    else from(appImagePath)
+    // Gradle 9 normalizes archive permissions by default, which would drop the launcher's executable bit
+    useFileSystemPermissions()
+    from(appImagePath)
     doLast { appImagePath.toFile().deleteRecursively() }
 }
 
@@ -379,10 +398,9 @@ suspend fun downloadEuiccInfo()
 
 fun renameDistFiles()
 {
-    // jpackage names installers like MiniLPA-1.1.1.dmg or minilpa_1.1.1_amd64.deb
-    val jpackageOutput = Regex("${project.name}[-_]\\d.*", RegexOption.IGNORE_CASE)
-    Files.list(distPath).use { it.toList() }
-        .filter { it.isRegularFile() && jpackageOutput.matches(it.name) && (packageType == null || it.extension == packageType) }
+    Files.createDirectories(distPath)
+    Files.list(jpackageOutputPath).use { it.toList() }
+        .filter { it.isRegularFile() }
         .forEach { path ->
             val distFilePath = distPath.resolve("$distName.${path.extension}")
             Files.move(path, distFilePath, StandardCopyOption.REPLACE_EXISTING)
