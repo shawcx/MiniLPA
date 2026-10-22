@@ -82,7 +82,7 @@ jobs:
       - name: Build Native Executable
         shell: bash
         run: |
-          ./gradlew jpackage -Ptype=${{ matrix.type }} ${{ matrix.wayland && '-Pnative-wayland' || '' }} -Pgithub-token=${{ secrets.GITHUB_TOKEN }} --info --stacktrace
+          ./gradlew jpackage -Ptype=${{ matrix.type }} ${{ matrix.wayland && '-Pnative-wayland' || '' }} --info --stacktrace
 
       - name: Get Short Commit Id
         shell: pwsh
@@ -127,74 +127,6 @@ jobs:
           name: MiniLPA-${{ env.SHORT_COMMIT_ID }}-standalone-jar
           path: |
             build/libs/MiniLPA-all.jar
-  canary-telegram:
-    name: Canary(Telegram)
-    runs-on: macos-latest
-    needs: [ build-with-zulu, build-with-jbr, build-standalone-jar ]
-    if: "!startsWith(github.ref, 'refs/tags/v')"
-    env:
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-    steps:
-      - name: Checkout Scripts
-        uses: actions/checkout@v4
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          sparse-checkout: scripts
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          python-version: 'pypy3.10'
-          cache: 'pip'
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          merge-multiple: true
-          path: artifact
-
-      - name: Telegram Push
-        shell: pwsh
-        if: env.TELEGRAM_TOKEN != ''
-        run: |
-          pip install -r scripts/requirements.txt
-          python scripts/telegrampush.py -token '${{ secrets.TELEGRAM_TOKEN }}' -target '@MiniLPACanary' -path "$(Get-Location)/artifact/" -message "\[[$($Env:GITHUB_SHA.Substring(0, 7))](${{ github.event.head_commit.url }})\] ${{ github.event.head_commit.message }}”
-  release-telegram:
-    name: Release(Telegram)
-    runs-on: macos-latest
-    needs: [ build-with-zulu, build-with-jbr ]
-    if: startsWith(github.ref, 'refs/tags/v')
-    env:
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-    steps:
-      - name: Checkout Scripts
-        uses: actions/checkout@v4
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          sparse-checkout: scripts
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          python-version: 'pypy3.10'
-          cache: 'pip'
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        if: env.TELEGRAM_TOKEN != ''
-        with:
-          merge-multiple: true
-          path: artifact
-
-      - name: Telegram Push
-        shell: pwsh
-        if: env.TELEGRAM_TOKEN != ''
-        run: |
-          pip install -r scripts/requirements.txt
-          python scripts/telegrampush.py -token '${{ secrets.TELEGRAM_TOKEN }}' -target '@MiniLPA' -path "$(Get-Location)/artifact/" -message "🎉 $("${{ github.ref_name }}".Replace(".", "\.")) Released\! 🎉`n[GitHub Release](https://github.com/EsimMoe/MiniLPA/releases/tag/$("${{ github.ref_name }}".Replace(".", "\.")))”
   release-github:
     name: Release(GitHub)
     runs-on: macos-latest

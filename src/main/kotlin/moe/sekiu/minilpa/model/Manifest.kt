@@ -1,11 +1,6 @@
 package moe.sekiu.minilpa.model
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
 import java.io.File
-import java.io.InputStream
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +17,6 @@ import moe.sekiu.minilpa.setting
 sealed class Manifest<T : Any>
 {
     abstract val path : String
-    abstract val updateURL : String
     val data : MutableList<T> = mutableListOf()
 
     internal inline fun <reified R> loadManifest0(entries : (R) -> List<T>) : Boolean
@@ -42,28 +36,8 @@ sealed class Manifest<T : Any>
 
     abstract fun loadManifest() : Boolean
 
-    suspend fun updateManifest()
-    {
-        HttpClient().use { client ->
-            val response = client.request(updateURL)
-            if (response.status.isSuccess())
-            {
-                File(appDataFolder, path).outputStream().buffered().use { out ->
-                    response.body<InputStream>().copyTo(out)
-                }
-            }
-        }
-    }
-
     companion object
     {
-        suspend fun updateManifests()
-        {
-            EumManifest.updateManifest()
-            CIManifest.updateManifest()
-            setting.update { `euicc-info-update-time` = System.currentTimeMillis() }
-        }
-
         fun loadManifests()
         {
             if (EumManifest.loadManifest() or CIManifest.loadManifest())
@@ -77,7 +51,6 @@ sealed class Manifest<T : Any>
 data object EumManifest : Manifest<EumManifest.Supplier>()
 {
     override val path = "eum-accredited.json"
-    override val updateURL = "https://euicc-manual.osmocom.org/docs/pki/eum/accredited.json"
     val suppliers = data
 
     override fun loadManifest() = loadManifest0<Accredited> { it.suppliers }
@@ -102,7 +75,6 @@ data object EumManifest : Manifest<EumManifest.Supplier>()
 data object CIManifest : Manifest<CIManifest.CertificateIssuer>()
 {
     override val path = "ci-manifest.json"
-    override val updateURL = "https://euicc-manual.osmocom.org/docs/pki/ci/manifest.json"
     val cis = data
 
     override fun loadManifest() = loadManifest0<List<CertificateIssuer>> { it }
