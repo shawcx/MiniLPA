@@ -14,3 +14,4 @@
 build
 eum-accredited.json
 ci-manifest.json
+.kotlin/
