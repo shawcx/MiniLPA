@@ -24,7 +24,7 @@
 </p>
 
 <div align="center">
-    <img alt="主题展示" src="assets/主题展示.apng">
+    <img alt="MiniLPA 晶片信息页面" src="assets/screenshot.png" width="780">
 </div>
 
 ## 关于此复刻

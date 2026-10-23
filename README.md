@@ -23,7 +23,7 @@
 </p>
 
 <div align="center">
-    <img alt="Theme Display" src="assets/主题展示.apng">
+    <img alt="MiniLPA showing a chip's details" src="assets/screenshot.png" width="780">
 </div>
 
 ## About This Fork
